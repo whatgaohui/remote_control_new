@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Device {
+  id        String   @id @default(cuid())
+  name      String
+  host      String
+  port      Int
+  os        String   @default("windows")
+  status    String   @default("offline")
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  connections Connection[]
+  operations  Operation[]
+}
+
+model Connection {
+  id             String    @id @default(cuid())
+  deviceId       String
+  status         String    @default("active")
+  connectedAt    DateTime  @default(now())
+  disconnectedAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id])
+}
+
+model Operation {
+  id        String   @id @default(cuid())
+  deviceId  String?
+  category  String
+  action    String
+  detail    String
+  severity  String   @default("info")
+  createdAt DateTime @default(now())
+
+  device Device? @relation(fields: [deviceId], references: [id])
+}

@@ -59,11 +59,37 @@
 ### 未解决问题
 - 离线设备也可连接（作为"唤醒连接"功能）
 - 需要编译 rc-server.exe 和 rc-client.exe 放到 public/downloads/
-- 需要推送到 GitHub: whatgaohui/remote_control_new
 - 设备卡片可以进一步增加动态数据（CPU/内存实时变化）
 
+---
+
+## 2026-04-24: Git 修复 + 推送到 GitHub
+
+### 完成的工作
+
+1. **修复 Git 仓库状态** - 之前因 `git pull --rebase` 导致 merge conflict，.git/index 损坏，所有工具无法使用
+   - 删除 .git/rebase-merge, .git/rebase-apply, MERGE_HEAD, MERGE_MSG, REBASE_HEAD
+   - 删除损坏的 .git/index
+   - 运行 `git read-tree HEAD` + `git reset HEAD` 恢复正常状态
+
+2. **成功推送到 GitHub**
+   - 仓库: https://github.com/whatgaohui/remote_control_new
+   - 分支: main
+   - 使用 `--force` 推送，包含3个 commits:
+     - `1f5bcc4` feat: 更新数据库
+     - `d9a9b48` 项目初始化
+     - `b077b0f` Initial commit
+
+3. **重启开发服务器** - 确认页面正常渲染 (GET / 200)
+
+### 已验证功能
+- ✅ Git 状态正常 (working tree clean)
+- ✅ GitHub 推送成功
+- ✅ 开发服务器运行正常
+- ✅ 页面 HTTP 200 正常渲染
+
 ### 下一阶段优先事项
-1. 编译Windows可执行文件
-2. 推送到GitHub
-3. 增加更多样式细节和动画效果
-4. 实时数据模拟增强
+1. 编译Windows可执行文件 (rc-server.exe, rc-client.exe)
+2. 增加更多样式细节和动画效果
+3. 实时数据模拟增强（CPU/内存动态变化）
+4. 更多功能完善

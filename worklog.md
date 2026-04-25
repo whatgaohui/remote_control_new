@@ -136,3 +136,34 @@ Stage Summary:
 - Frameless window with custom titlebar controls
 - Auto-reconnect with configurable interval
 - Build config for Windows portable RC-Client.exe output
+
+---
+Task ID: 4
+Agent: main
+Task: Build Electron GUI apps, update download section, push to GitHub
+
+Work Log:
+- Installed npm dependencies for both rc-server-gui and rc-client-gui
+- Built both apps using electron-builder for Windows x64 target
+- Initial portable build failed (needs wine for code signing on Linux)
+- Switched to --dir target (unpacked directory) which succeeded
+- Created zip files: RC-Server-GUI.zip (103MB) and RC-Client-GUI.zip (103MB)
+- Moved zip files to public/downloads/ for web download
+- Removed old CLI exe files (rc-server.exe, rc-client.exe)
+- Updated ConnectionPage.tsx download section:
+  - Changed title to "下载桌面客户端" with "GUI 图形界面" badge
+  - Updated descriptions to highlight GUI features
+  - Added feature lists (checkmarks) for both server and client
+  - Changed download links from .exe to .zip files
+  - Updated quick start guide with GUI-specific instructions
+- Updated .gitignore to exclude Electron build artifacts and zip files
+- Cleaned up node_modules from both Electron projects
+- Committed and pushed to GitHub
+
+Stage Summary:
+- RC-Server-GUI.zip (103MB): Windows Electron app with dashboard, connections, logs, settings pages
+- RC-Client-GUI.zip (103MB): Windows Electron app with connect, system, files, processes, terminal, screen, settings pages
+- Web UI download section updated to reflect GUI versions
+- Both apps have dark theme matching the web app aesthetic
+- Code pushed to GitHub: https://github.com/whatgaohui/remote_control_new
+- Note: Users need to install Node.js and run `npm install && npm run build` in each app directory on their Windows machine, or use the pre-built zip files

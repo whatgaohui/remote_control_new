@@ -167,3 +167,35 @@ Stage Summary:
 - Both apps have dark theme matching the web app aesthetic
 - Code pushed to GitHub: https://github.com/whatgaohui/remote_control_new
 - Note: Users need to install Node.js and run `npm install && npm run build` in each app directory on their Windows machine, or use the pre-built zip files
+
+---
+Task ID: 5
+Agent: main
+Task: Fix server GUI "Start Service" button not responding - end-to-end QA
+
+Work Log:
+- Investigated why server GUI "启动服务" (Start Service) button doesn't respond when clicked
+- **Root Cause Found**: Content Security Policy (CSP) in both server and client HTML files blocks inline onclick handlers
+  - CSP was: `script-src 'self';` which blocks ALL inline JavaScript including `onclick="toggleServer()"`
+  - The "启动服务" button used `onclick="toggleServer()"` which was silently blocked by CSP
+  - Same issue affected: `onclick="saveSettings()"`, `onclick="resetSettings()"`, `onclick="disconnectClient(...)"` in server GUI
+  - Same issue affected: `onclick="killProcess(...)"`, `onclick="navigateToPath(...)"`, `onclick="reconnectFromHistory(...)"` in client GUI
+- **Secondary Bug Found**: `toggleServer()` read config from dashboard stats display (`dom.statPort.textContent`) instead of settings form inputs (`dom.settingPort.value`)
+- **Fixed both server and client GUIs:**
+  1. Updated CSP in both HTML files: added `'unsafe-inline'` to `script-src` (acceptable for Electron desktop apps)
+  2. Server GUI: Removed inline `onclick` from HTML, added addEventListener in renderer.js for server toggle, save/reset settings buttons
+  3. Server GUI: Fixed config reading in `toggleServer()` to read from settings form inputs instead of dashboard stats
+  4. Server GUI: Changed disconnect button from inline onclick to data-client-id + event delegation
+  5. Client GUI: Changed process kill, breadcrumb, file row, and history item from inline onclick to data-attributes + event delegation
+  6. Client GUI: Added document-level event delegation click handler for all dynamic elements
+- Tested web app with agent-browser - all features working correctly
+- Connection flow works (click device card → animation → remote control UI)
+- All 12 tabs render correctly with data
+- Disconnect returns to connection page properly
+
+Stage Summary:
+- **Critical Bug Fixed**: CSP was blocking all inline onclick handlers in Electron GUI apps, making "启动服务" and all other interactive buttons non-functional
+- **Config Bug Fixed**: Server toggle now reads from settings form instead of dashboard display
+- Both server and client GUI apps now use addEventListener + event delegation instead of inline onclick
+- Web app tested and verified working via agent-browser
+- CSP updated to `script-src 'self' 'unsafe-inline'` for both Electron apps

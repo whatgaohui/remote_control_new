@@ -125,9 +125,10 @@ async function toggleServer() {
         showToast(result.message || '停止失败', 'error');
       }
     } else {
+      // Read config from settings form, not from dashboard stats
       const config = {
-        port: parseInt(dom.statPort.textContent) || 9527,
-        host: dom.statHost.textContent || '0.0.0.0',
+        port: parseInt(dom.settingPort.value) || 9527,
+        host: dom.settingHost.value || '0.0.0.0',
         password: dom.settingPassword?.value || '',
       };
       const result = await window.api.startServer(config);
@@ -144,9 +145,6 @@ async function toggleServer() {
     refreshStatus();
   }
 }
-
-// Make toggleServer global for onclick
-window.toggleServer = toggleServer;
 
 // ─── Status Updates ───────────────────────────────────────────────────────────
 async function refreshStatus() {
@@ -302,7 +300,7 @@ async function refreshConnections() {
                 </span>
               </td>
               <td>
-                <button class="btn-disconnect" onclick="disconnectClient('${escapeHtml(c.id)}')">断开</button>
+                <button class="btn-disconnect" data-client-id="${escapeHtml(c.id)}">断开</button>
               </td>
             </tr>
           `).join('')}
@@ -329,7 +327,7 @@ async function disconnectClient(id) {
   }
 }
 
-window.disconnectClient = disconnectClient;
+// disconnectClient is called via event delegation
 
 // ─── Logs ─────────────────────────────────────────────────────────────────────
 async function refreshLogs() {
@@ -455,7 +453,7 @@ async function saveSettings() {
   }
 }
 
-window.saveSettings = saveSettings;
+// saveSettings is called via addEventListener
 
 function resetSettings() {
   dom.settingPort.value = 9527;
@@ -466,7 +464,7 @@ function resetSettings() {
   showToast('已恢复默认设置，请点击保存', 'info');
 }
 
-window.resetSettings = resetSettings;
+// resetSettings is called via addEventListener
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 function escapeHtml(str) {
@@ -546,6 +544,30 @@ function setupEventListeners() {
       showToast('日志已清空', 'success');
     } catch (err) {
       showToast('清空日志失败', 'error');
+    }
+  });
+
+  // Server toggle button
+  dom.btnServerToggle.addEventListener('click', toggleServer);
+
+  // Settings buttons
+  dom.btnSaveSettings = document.getElementById('btn-save-settings');
+  dom.btnResetSettings = document.getElementById('btn-reset-settings');
+  if (dom.btnSaveSettings) {
+    dom.btnSaveSettings.addEventListener('click', saveSettings);
+  }
+  if (dom.btnResetSettings) {
+    dom.btnResetSettings.addEventListener('click', resetSettings);
+  }
+
+  // Connections page: use event delegation for disconnect buttons
+  dom.clientsContainer.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-disconnect');
+    if (btn) {
+      const clientId = btn.dataset.clientId;
+      if (clientId) {
+        disconnectClient(clientId);
+      }
     }
   });
 

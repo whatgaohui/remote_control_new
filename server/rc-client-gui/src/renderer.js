@@ -445,7 +445,7 @@ function renderProcesses(procs) {
         <div class="process-threads" style="text-align: right;">${p.threads}</div>
         <div class="process-status ${statusClass}">${p.status}</div>
         <div class="process-kill">
-          <button class="process-kill-btn" onclick="killProcess(${p.pid})" title="结束进程">✕</button>
+          <button class="process-kill-btn" data-pid="${p.pid}" title="结束进程">✕</button>
         </div>
       </div>
     `;
@@ -493,7 +493,7 @@ function renderFiles(data) {
     if (idx === parts.length - 1) {
       breadcrumbHtml += `<span class="breadcrumb-current">${escapeHtml(part)}</span>`;
     } else {
-      breadcrumbHtml += `<span class="breadcrumb-item" onclick="navigateToPath('${escapeAttr(path)}')">${escapeHtml(part)}</span>`;
+      breadcrumbHtml += `<span class="breadcrumb-item" data-path="${escapeAttr(path)}">${escapeHtml(part)}</span>`;
     }
   });
   $('#files-breadcrumb').innerHTML = breadcrumbHtml;
@@ -525,12 +525,12 @@ function renderFiles(data) {
   for (const f of filtered) {
     const icon = f.type === 'folder' ? '📁' : getFileIcon(f.name);
     const nameClass = f.type === 'folder' ? 'file-name folder' : 'file-name';
-    const clickHandler = f.type === 'folder'
-      ? `onclick="navigateToPath('${escapeAttr(state.currentPath + '\\' + f.name)}')"`
+    const clickAttr = f.type === 'folder'
+      ? `data-path="${escapeAttr(state.currentPath + '\\' + f.name)}"`
       : '';
 
     html += `
-      <div class="files-list-row" ${clickHandler}>
+      <div class="files-list-row file-row" ${clickAttr}>
         <div class="file-icon">${icon}</div>
         <div class="${nameClass}">${escapeHtml(f.name)}</div>
         <div class="file-size">${f.type !== 'folder' ? formatBytes(f.size) : ''}</div>
@@ -812,7 +812,7 @@ function renderConnectionHistory(history) {
   let html = '';
   for (const h of history.slice(0, 5)) {
     html += `
-      <div class="history-item" onclick="reconnectFromHistory('${escapeAttr(h.host)}', ${h.port}, ${h.password})">
+      <div class="history-item" data-host="${escapeAttr(h.host)}" data-port="${h.port}" data-has-password="${!!h.password}">
         <div style="color: var(--accent); font-size: 16px;">🔗</div>
         <div>
           <div class="host">${escapeHtml(h.host)}:${h.port}</div>
@@ -1170,6 +1170,41 @@ function setupEventListeners() {
 
   $('#btn-save-settings').addEventListener('click', saveSettings);
   $('#btn-reset-settings').addEventListener('click', resetSettings);
+
+  // ─── Event delegation for dynamically generated elements ────────────────
+  // Process kill buttons (data-pid)
+  document.addEventListener('click', (e) => {
+    const killBtn = e.target.closest('.process-kill-btn');
+    if (killBtn) {
+      const pid = parseInt(killBtn.dataset.pid);
+      if (pid) killProcess(pid);
+      return;
+    }
+
+    // History items (data-host, data-port)
+    const historyItem = e.target.closest('.history-item');
+    if (historyItem) {
+      const host = historyItem.dataset.host;
+      const port = parseInt(historyItem.dataset.port) || 9527;
+      const hasPassword = historyItem.dataset.hasPassword === 'true';
+      if (host) reconnectFromHistory(host, port, hasPassword);
+      return;
+    }
+
+    // Breadcrumb items (data-path)
+    const breadcrumbItem = e.target.closest('.breadcrumb-item');
+    if (breadcrumbItem && breadcrumbItem.dataset.path) {
+      navigateToPath(breadcrumbItem.dataset.path);
+      return;
+    }
+
+    // File rows (data-path for folders)
+    const fileRow = e.target.closest('.file-row');
+    if (fileRow && fileRow.dataset.path) {
+      navigateToPath(fileRow.dataset.path);
+      return;
+    }
+  });
 }
 
 // ─── Initialization ──────────────────────────────────────────────────────────

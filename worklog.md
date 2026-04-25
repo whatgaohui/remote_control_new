@@ -348,3 +348,75 @@ Stage Summary:
 - **Download Files**: RC-Server-GUI-v2.0.0.zip (103MB), RC-Client-GUI-v2.0.0.zip (103MB)
 - **Web UI Updated**: MainLayout.tsx and ConnectionPage.tsx version refs updated to v2.0.0
 - **All Existing Functionality Preserved**: WebSocket server/client, IPC handlers, tray, config persistence, UI pages all unchanged
+
+---
+Task ID: 10
+Agent: general-purpose
+Task: Fix auth flow and improve UI - improve authentication UX
+
+Work Log:
+- Read worklog.md and all 11 source files for both rc-server-gui and rc-client-gui
+- **Client renderer.js changes:**
+  - Added `requiresAuth` and `authRetryVisible` to state object
+  - Rewrote `updateConnectSteps()` to dynamically change auth step label: "无需认证" when no auth needed, "需要密码认证" when auth required, "身份验证" when unknown
+  - Added `.skipped` CSS class support for steps
+  - Auth step now shows "无需认证 ✓" text when no auth is required
+  - Changed onAuthenticated handler to track `requiresAuth` and hide auth retry dialog
+  - Changed onAuthFailed handler to call `showAuthRetryDialog()` instead of just showing a toast
+  - Added `showAuthRetryDialog()` function that shows the auth retry dialog with password input
+  - Added `hideAuthRetryDialog()` function
+  - Added `retryAuthWithPassword()` function that calls new IPC `reconnect-with-password`
+  - Added `cancelAuthRetry()` function that resets connection state and shows connect form
+  - Added event listeners for auth retry dialog buttons and Enter key on password input
+- **Client main.js changes:**
+  - Bumped VERSION from '2.0.0' to '2.1.0'
+  - Modified auth_failed handler to send `requiresAuth: true` in addition to message
+  - Added new `reconnect-with-password` IPC handler that disconnects, updates password, and reconnects
+- **Client preload.js changes:**
+  - Added `reconnectWithPassword` IPC bridge function
+- **Client index.html changes:**
+  - Added auth retry dialog HTML (🔐 icon, password input, retry/cancel buttons, hint text)
+  - Updated all version references from v2.0.0 to v2.1.0 (titlebar, terminal, statusbar)
+- **Client styles.css changes:**
+  - Added comprehensive styles for auth retry dialog: centered card with accent border, focus glow on input, error display area, hint section with separator, responsive layout
+- **Server index.html changes:**
+  - Updated password form hint to dynamic element with id `password-status-hint`
+  - Default text: "🔓 当前无需密码，任何客户端都可以连接"
+  - Updated all version references from v2.0.0 to v2.1.0 (titlebar, statusbar)
+- **Server renderer.js changes:**
+  - Added `updatePasswordHint()` function that shows ⚠️ warning when password is set, 🔓 unlocked when empty
+  - Added `updatePasswordProtectionUI()` function that adds a password protection stat card to the dashboard
+  - Updated `refreshSettings()` to call `updatePasswordHint()` after loading config
+  - Updated `saveSettings()` to call `updatePasswordHint()` after saving
+  - Updated `resetSettings()` to call `updatePasswordHint('')` after resetting
+  - Updated `refreshStatus()` to call `updatePasswordProtectionUI()` for dashboard stat card
+- **Version bump from 2.0.0 to 2.1.0 in:**
+  - rc-server-gui/package.json
+  - rc-server-gui/main.js (VERSION constant)
+  - rc-client-gui/package.json
+  - rc-client-gui/main.js (VERSION constant)
+- **Tested both apps with Xvfb:**
+  - Server: Started successfully, logged "RC-Server v2.1.0 starting..."
+  - Client: Started successfully, logged "RC-Client v2.1.0 starting..."
+- **Built both apps for Windows:**
+  - `npx electron-builder --win --dir` for both server and client
+  - Verified version 2.1.0 in both asar package.json files
+- **Created ZIP files:**
+  - Removed old RC-Server-GUI-v2.0.0.zip and RC-Client-GUI-v2.0.0.zip
+  - Created RC-Server-GUI-v2.1.0.zip (103MB)
+  - Created RC-Client-GUI-v2.1.0.zip (103MB)
+  - Cleaned up dist directories after building
+- **Updated Next.js download page version refs:**
+  - MainLayout.tsx: Updated download names, versions, URLs, hashes, changelogs to v2.1.0
+  - MainLayout.tsx: Updated version banner to v2.1.0 with new description
+  - MainLayout.tsx: Updated version history with v2.1.0 entry
+  - ConnectionPage.tsx: Updated all v2.0.0 references to v2.1.0 (badge, download links, instructions)
+- **Lint passed** with no errors
+
+Stage Summary:
+- **Auth Flow UX Fixed**: When authentication fails, user now sees a clear dialog with password input, retry button, and helpful hints instead of just a toast notification
+- **Dynamic Auth Step**: Connection step animation shows "无需认证 ✓" when no password is needed, "需要密码认证" when password is required
+- **Server Password Visibility**: Settings page shows dynamic hint (🔓/⚠️) based on whether password is set; Dashboard shows password protection status stat card
+- **Reconnect with Password**: New IPC bridge allows disconnecting and reconnecting with a different password without leaving the connect page
+- **Version v2.1.0**: Both apps updated, rebuilt, and packaged with version in filename
+- **All lint checks pass**

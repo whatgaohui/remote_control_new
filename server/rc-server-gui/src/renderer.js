@@ -170,6 +170,9 @@ async function refreshStatus() {
     dom.statPort.textContent = status.config?.port || 9527;
     dom.statHost.textContent = status.config?.host || '0.0.0.0';
 
+    // Update password protection indicator in dashboard
+    updatePasswordProtectionUI(status.config?.password);
+
     // Update client badge
     if (status.clientCount > 0) {
       dom.clientBadge.style.display = 'inline';
@@ -188,6 +191,33 @@ async function refreshStatus() {
     }
   } catch (err) {
     console.error('刷新状态失败:', err);
+  }
+}
+
+function updatePasswordProtectionUI(password) {
+  // Find or create the password protection indicator in the dashboard stats
+  let pwStatCard = document.getElementById('stat-password-protection');
+  const statsRow = document.querySelector('.stats-row');
+  if (!statsRow) return;
+
+  if (!pwStatCard) {
+    // Create a new stat card for password protection
+    pwStatCard = document.createElement('div');
+    pwStatCard.className = 'stat-card';
+    pwStatCard.id = 'stat-password-protection';
+    statsRow.appendChild(pwStatCard);
+  }
+
+  if (password && password.length > 0) {
+    pwStatCard.innerHTML = `
+      <div class="stat-value" style="color: var(--warning);">🔐 已启用</div>
+      <div class="stat-label">密码保护</div>
+    `;
+  } else {
+    pwStatCard.innerHTML = `
+      <div class="stat-value" style="color: var(--text-muted);">🔓 未启用</div>
+      <div class="stat-label">密码保护</div>
+    `;
   }
 }
 
@@ -421,8 +451,23 @@ async function refreshSettings() {
     dom.settingPassword.value = config.password || '';
     dom.settingAutoStart.checked = !!config.autoStart;
     dom.settingMinimizeToTray.checked = config.minimizeToTray !== false;
+    // Update password status hint
+    updatePasswordHint(config.password);
   } catch (err) {
     console.error('刷新设置失败:', err);
+  }
+}
+
+function updatePasswordHint(password) {
+  const hint = document.getElementById('password-status-hint');
+  if (hint) {
+    if (password && password.length > 0) {
+      hint.innerHTML = '⚠️ 设置密码后，客户端连接时需要输入正确密码才能认证';
+      hint.style.color = 'var(--warning)';
+    } else {
+      hint.innerHTML = '🔓 当前无需密码，任何客户端都可以连接';
+      hint.style.color = '';
+    }
   }
 }
 
@@ -444,6 +489,7 @@ async function saveSettings() {
     const success = await window.api.saveConfig(config);
     if (success) {
       showToast('设置已保存', 'success');
+      updatePasswordHint(config.password);
       refreshStatus();
     } else {
       showToast('保存设置失败', 'error');
@@ -461,6 +507,7 @@ function resetSettings() {
   dom.settingPassword.value = '';
   dom.settingAutoStart.checked = false;
   dom.settingMinimizeToTray.checked = true;
+  updatePasswordHint('');
   showToast('已恢复默认设置，请点击保存', 'info');
 }
 

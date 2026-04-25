@@ -30,6 +30,9 @@ contextBridge.exposeInMainWorld('api', {
   // Version
   getVersion: () => ipcRenderer.invoke('get-version'),
 
+  // Reconnect with new password
+  reconnectWithPassword: (password) => ipcRenderer.invoke('reconnect-with-password', password),
+
   // Event listeners
   onConnected: (callback) => {
     ipcRenderer.on('connected', (_, data) => callback(data));

@@ -13,7 +13,7 @@
     <div class="titlebar">
       <div class="titlebar-icon">⚡</div>
       <div class="titlebar-title">RC-Client 远程控制客户端</div>
-      <div class="titlebar-version">v2.0.0</div>
+      <div class="titlebar-version">v2.1.0</div>
       <div class="titlebar-spacer"></div>
       <div class="titlebar-controls">
         <button class="titlebar-btn" id="btn-minimize" title="最小化">─</button>
@@ -120,6 +120,27 @@
                   <div class="connect-step" id="step-ready">
                     <div class="step-dot"></div>
                     <span>就绪</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Auth Retry Dialog -->
+              <div class="auth-retry-dialog" id="auth-retry-dialog" style="display:none;">
+                <div class="auth-retry-card">
+                  <div class="auth-retry-icon">🔐</div>
+                  <h3>需要密码认证</h3>
+                  <p class="auth-retry-desc">服务端设置了连接密码，请输入正确的密码后重试</p>
+                  <div class="auth-retry-error" id="auth-retry-error" style="display:none;"></div>
+                  <div class="form-group">
+                    <label class="form-label">连接密码</label>
+                    <input type="password" class="form-input" id="auth-retry-password" placeholder="请输入服务端设置的密码">
+                  </div>
+                  <div class="auth-retry-actions">
+                    <button class="btn btn-primary" id="btn-auth-retry">重新连接</button>
+                    <button class="btn btn-secondary" id="btn-auth-cancel">取消</button>
+                  </div>
+                  <div class="auth-retry-hint">
+                    💡 提示：密码在服务端"设置"页面中配置，如果不需要密码保护，请在服务端清空密码后重启服务
                   </div>
                 </div>
               </div>
@@ -289,7 +310,7 @@
               </div>
               <div class="terminal-body" id="terminal-body">
                 <div class="terminal-line system">╔═══════════════════════════════════════════════════╗</div>
-                <div class="terminal-line system">║          RC-Client 远程终端 v2.0.0               ║</div>
+                <div class="terminal-line system">║          RC-Client 远程终端 v2.1.0               ║</div>
                 <div class="terminal-line system">╠═══════════════════════════════════════════════════╣</div>
                 <div class="terminal-line system">║  输入 help 查看可用命令                          ║</div>
                 <div class="terminal-line system">║  输入 shell 进入远程终端模式                     ║</div>
@@ -491,7 +512,7 @@
         <span id="status-received">0 B</span>
       </div>
       <div class="statusbar-spacer"></div>
-      <div class="statusbar-item statusbar-version">RC-Client v2.0.0</div>
+      <div class="statusbar-item statusbar-version">RC-Client v2.1.0</div>
     </div>
 
     <!-- Toast Container -->

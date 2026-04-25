@@ -864,6 +864,101 @@ a:hover {
   animation: pulse-dot 1s ease-in-out infinite;
 }
 
+/* ─── Auth Retry Dialog ──────────────────────────────────────────────────────── */
+.auth-retry-dialog {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 16px;
+  margin-bottom: 20px;
+}
+
+.auth-retry-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-accent), 0 0 40px rgba(6, 182, 212, 0.08);
+  animation: fadeIn 0.3s ease;
+}
+
+.auth-retry-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.auth-retry-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.auth-retry-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.auth-retry-error {
+  font-size: 12px;
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.auth-retry-card .form-group {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.auth-retry-card .form-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.auth-retry-card .form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.auth-retry-card .form-input::placeholder {
+  color: var(--text-muted);
+}
+
+.auth-retry-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.auth-retry-actions .btn {
+  flex: 1;
+  padding: 10px 20px;
+  font-size: 13px;
+}
+
+.auth-retry-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+  padding-top: 12px;
+  border-top: 1px solid rgba(51, 65, 85, 0.5);
+}
+
 /* Connection history */
 .history-title {
   font-size: 13px;

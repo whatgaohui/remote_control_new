@@ -8,6 +8,7 @@ const state = {
   isConnected: false,
   isConnecting: false,
   isAuthenticated: false,
+  requiresAuth: null,  // null = unknown, true = needs password, false = no auth needed
   currentPage: 'connect',
   latency: 0,
   dataSent: 0,
@@ -20,6 +21,7 @@ const state = {
   files: null,
   commandHistory: [],
   historyIndex: -1,
+  authRetryVisible: false,  // Whether the auth retry dialog is showing
   settings: {
     defaultHost: '',
     defaultPort: 9527,
@@ -169,9 +171,24 @@ function updateConnectSteps(step) {
   const steps = ['step-tcp', 'step-ws', 'step-auth', 'step-ready'];
   const stepIdx = steps.indexOf(step);
 
+  // Update auth step label based on requiresAuth state
+  const authStep = $('#step-auth');
+  if (authStep) {
+    const authLabel = authStep.querySelector('span');
+    if (authLabel) {
+      if (state.requiresAuth === false) {
+        authLabel.textContent = '无需认证';
+      } else if (state.requiresAuth === true) {
+        authLabel.textContent = '需要密码认证';
+      } else {
+        authLabel.textContent = '身份验证';
+      }
+    }
+  }
+
   steps.forEach((id, idx) => {
     const el = $(`#${id}`);
-    el.classList.remove('done', 'active');
+    el.classList.remove('done', 'active', 'skipped');
     if (idx < stepIdx) {
       el.classList.add('done');
     } else if (idx === stepIdx) {
@@ -179,7 +196,18 @@ function updateConnectSteps(step) {
     }
   });
 
-  const texts = ['正在建立TCP连接...', '正在WebSocket握手...', '正在身份验证...', '连接就绪！'];
+  // If no auth required, mark auth step as skipped/done automatically
+  if (state.requiresAuth === false) {
+    const authEl = $('#step-auth');
+    if (authEl && stepIdx >= 2) {
+      authEl.classList.remove('active');
+      authEl.classList.add('done');
+    }
+  }
+
+  const texts = state.requiresAuth === false
+    ? ['正在建立TCP连接...', '正在WebSocket握手...', '无需认证 ✓', '连接就绪！']
+    : ['正在建立TCP连接...', '正在WebSocket握手...', '正在密码认证...', '连接就绪！'];
   if (stepIdx >= 0 && stepIdx < texts.length) {
     $('#connect-anim-text').textContent = texts[stepIdx];
   }
@@ -845,6 +873,73 @@ function escapeAttr(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
+// ─── Auth Retry Dialog ───────────────────────────────────────────────────────
+function showAuthRetryDialog(errorMessage) {
+  state.authRetryVisible = true;
+  const dialog = $('#auth-retry-dialog');
+  const form = $('#connect-form');
+  const anim = $('#connect-animation');
+  if (dialog) {
+    dialog.style.display = 'flex';
+  }
+  if (form) form.style.display = 'none';
+  if (anim) anim.classList.remove('active');
+
+  // Update error message if element exists
+  const errorEl = $('#auth-retry-error');
+  if (errorEl && errorMessage) {
+    errorEl.textContent = errorMessage;
+  }
+
+  // Focus the password input
+  const pwdInput = $('#auth-retry-password');
+  if (pwdInput) {
+    pwdInput.value = '';
+    setTimeout(() => pwdInput.focus(), 100);
+  }
+}
+
+function hideAuthRetryDialog() {
+  state.authRetryVisible = false;
+  const dialog = $('#auth-retry-dialog');
+  if (dialog) {
+    dialog.style.display = 'none';
+  }
+}
+
+async function retryAuthWithPassword() {
+  const password = $('#auth-retry-password')?.value || '';
+  const btnRetry = $('#btn-auth-retry');
+
+  if (btnRetry) {
+    btnRetry.disabled = true;
+    btnRetry.textContent = '重新连接中...';
+  }
+
+  try {
+    const result = await window.api.reconnectWithPassword(password);
+    if (!result.success) {
+      showToast(`重新连接失败: ${result.error}`, 'error');
+    }
+  } catch (e) {
+    showToast(`重新连接异常: ${e.message}`, 'error');
+  } finally {
+    if (btnRetry) {
+      btnRetry.disabled = false;
+      btnRetry.textContent = '重新连接';
+    }
+  }
+}
+
+function cancelAuthRetry() {
+  hideAuthRetryDialog();
+  // Reset connection state and show connect form
+  state.isConnected = false;
+  state.isAuthenticated = false;
+  state.isConnecting = false;
+  updateConnectionUI();
+}
+
 // ─── IPC Event Handlers ──────────────────────────────────────────────────────
 function setupIpcHandlers() {
   window.api.onConnected((data) => {
@@ -866,6 +961,9 @@ function setupIpcHandlers() {
 
   window.api.onAuthenticated((data) => {
     state.isAuthenticated = true;
+    state.requiresAuth = data.requiresAuth;
+    // Hide auth retry dialog if visible
+    hideAuthRetryDialog();
     updateConnectSteps('step-ready');
     setTimeout(() => {
       state.isConnecting = false;
@@ -878,8 +976,10 @@ function setupIpcHandlers() {
   window.api.onAuthFailed((data) => {
     state.isAuthenticated = false;
     state.isConnecting = false;
+    state.requiresAuth = data.requiresAuth !== undefined ? data.requiresAuth : true;
     updateConnectionUI();
-    showToast(`认证失败: ${data.message}`, 'error');
+    // Show auth retry dialog instead of just a toast
+    showAuthRetryDialog(data.message);
     terminalPrint(`认证失败: ${data.message}`, 'error');
   });
 
@@ -1070,6 +1170,23 @@ function setupEventListeners() {
   $('#input-password').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') connectToServer();
   });
+
+  // Auth retry dialog buttons
+  const btnAuthRetry = $('#btn-auth-retry');
+  if (btnAuthRetry) {
+    btnAuthRetry.addEventListener('click', retryAuthWithPassword);
+  }
+  const btnAuthCancel = $('#btn-auth-cancel');
+  if (btnAuthCancel) {
+    btnAuthCancel.addEventListener('click', cancelAuthRetry);
+  }
+  // Enter key on auth retry password input
+  const authRetryPwd = $('#auth-retry-password');
+  if (authRetryPwd) {
+    authRetryPwd.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') retryAuthWithPassword();
+    });
+  }
 
   // System Info
   $('#btn-refresh-system').addEventListener('click', refreshSystemInfo);

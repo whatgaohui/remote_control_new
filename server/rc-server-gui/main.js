@@ -40,7 +40,7 @@ if (!gotTheLock) {
 }
 
 // ─── 常量 ──────────────────────────────────────────────────────────────────────
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 const DEFAULT_PORT = 9527;
 const DEFAULT_HOST = '0.0.0.0';
 const MAX_LOG_ENTRIES = 1000;

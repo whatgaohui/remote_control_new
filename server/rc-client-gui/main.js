@@ -38,7 +38,7 @@ if (!gotTheLock) {
   app.exit(0);  // app.exit(0) is more reliable than app.quit() on Windows
 }
 
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 
 // ─── 错误日志（尽早初始化，写文件到exe旁边）──────────────────────────────────────────
 let logFilePath;
@@ -392,7 +392,10 @@ function handleServerMessage(data) {
     }
     case 'auth_failed': {
       isAuthenticated = false;
-      sendToRenderer('auth-failed', { message: data.message || 'Authentication failed' });
+      sendToRenderer('auth-failed', {
+        message: data.message || 'Authentication failed',
+        requiresAuth: true
+      });
       break;
     }
     case 'pong': {
@@ -549,6 +552,27 @@ ipcMain.handle('window-is-maximized', () => {
 
 ipcMain.handle('get-version', () => {
   return VERSION;
+});
+
+ipcMain.handle('reconnect-with-password', (event, password) => {
+  try {
+    // Disconnect current connection
+    disconnectFromServer();
+
+    // Update password in config
+    connectionConfig.password = password || '';
+
+    // Reconnect
+    const result = connectToServer({
+      host: connectionConfig.host,
+      port: connectionConfig.port,
+      password: password || ''
+    });
+    return result;
+  } catch (err) {
+    writeErrorLog(`reconnect-with-password error: ${err.message}`);
+    return { success: false, error: err.message };
+  }
 });
 
 writeErrorLog('IPC handlers set up successfully');

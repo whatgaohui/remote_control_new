@@ -19,7 +19,7 @@
         </svg>
       </div>
       <span class="titlebar-title">RC-Server 远程控制服务端</span>
-      <span class="titlebar-version">v2.0.0</span>
+      <span class="titlebar-version">v2.1.0</span>
       <div class="titlebar-controls">
         <button class="titlebar-btn" id="btn-minimize" title="最小化">
           <svg viewBox="0 0 12 12"><line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.5"/></svg>
@@ -222,7 +222,7 @@
             <div class="form-group">
               <label class="form-label">连接密码 (可选)</label>
               <input type="password" class="form-input" id="setting-password" placeholder="留空则不需要密码">
-              <div class="form-hint">设置密码后客户端连接需先进行认证</div>
+              <div class="form-hint" id="password-status-hint">🔓 当前无需密码，任何客户端都可以连接</div>
             </div>
           </div>
 
@@ -287,7 +287,7 @@
       </div>
       <div class="statusbar-item">
         <span>📦</span>
-        <span>v2.0.0</span>
+        <span>v2.1.0</span>
       </div>
     </div>
 

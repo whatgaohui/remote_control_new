@@ -34,6 +34,9 @@ import {
   RefreshCw,
   LayoutGrid,
   List,
+  Download,
+  MonitorSmartphone,
+  TerminalSquare,
 } from 'lucide-react';
 
 // ─── Device hardware metadata ──────────────────────────────────────────────
@@ -469,6 +472,106 @@ export default function ConnectionPage() {
                   <ArrowRight className="mr-1 h-4 w-4" />
                   连接
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ── Download Section ───────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
+          className="mb-8"
+        >
+          <Card className="border-slate-800 bg-gradient-to-r from-slate-900/80 to-slate-900/60 backdrop-blur-sm">
+            <CardHeader className="pb-0">
+              <CardTitle className="flex items-center gap-2 text-lg text-white">
+                <Download className="h-5 w-5 text-cyan-400" />
+                下载客户端程序
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                下载并运行程序，即可开始远程控制
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* RC-Server */}
+                <div className="group rounded-xl border border-slate-700/50 bg-slate-800/40 p-4 transition-all hover:border-emerald-500/30 hover:bg-slate-800/60">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                      <Server className="h-5 w-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">RC-Server 服务端</h3>
+                      <p className="text-xs text-slate-500">运行在被控端 PC 上</p>
+                    </div>
+                  </div>
+                  <p className="mb-3 text-xs text-slate-400 leading-relaxed">
+                    在需要被远程控制的电脑上运行此程序，它将监听端口等待客户端连接。支持密码保护、系统信息采集、文件管理等功能。
+                  </p>
+                  <div className="mb-3 rounded-lg bg-slate-900/60 p-2">
+                    <p className="text-[10px] text-slate-500 mb-1">使用方法：</p>
+                    <code className="text-[11px] text-emerald-400/90">
+                      rc-server.exe --port 9527 --password 你的密码
+                    </code>
+                  </div>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500"
+                  >
+                    <a href="/downloads/rc-server.exe" download>
+                      <Download className="mr-1.5 h-4 w-4" />
+                      下载 rc-server.exe
+                    </a>
+                  </Button>
+                </div>
+
+                {/* RC-Client */}
+                <div className="group rounded-xl border border-slate-700/50 bg-slate-800/40 p-4 transition-all hover:border-cyan-500/30 hover:bg-slate-800/60">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10">
+                      <MonitorSmartphone className="h-5 w-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">RC-Client 客户端</h3>
+                      <p className="text-xs text-slate-500">运行在控制端 PC 上</p>
+                    </div>
+                  </div>
+                  <p className="mb-3 text-xs text-slate-400 leading-relaxed">
+                    在你用于远程控制的电脑上运行此程序，连接到服务端后即可查看系统信息、管理文件、执行命令等操作。
+                  </p>
+                  <div className="mb-3 rounded-lg bg-slate-900/60 p-2">
+                    <p className="text-[10px] text-slate-500 mb-1">使用方法：</p>
+                    <code className="text-[11px] text-cyan-400/90">
+                      rc-client.exe --host 192.168.1.100 --password 你的密码
+                    </code>
+                  </div>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-cyan-600 to-sky-600 text-white shadow-lg shadow-cyan-600/20 hover:from-cyan-500 hover:to-sky-500"
+                  >
+                    <a href="/downloads/rc-client.exe" download>
+                      <Download className="mr-1.5 h-4 w-4" />
+                      下载 rc-client.exe
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Usage guide */}
+              <div className="mt-4 rounded-lg border border-slate-700/30 bg-slate-900/40 p-3">
+                <div className="flex items-start gap-2">
+                  <TerminalSquare className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                  <div className="text-xs text-slate-400 leading-relaxed">
+                    <p className="mb-1 font-medium text-slate-300">快速开始：</p>
+                    <p>1. 在被控电脑上运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">rc-server.exe</code>，默认监听 9527 端口</p>
+                    <p>2. 在控制电脑上运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-cyan-400">rc-client.exe --host 被控端IP</code></p>
+                    <p>3. 连接成功后可使用 <code className="rounded bg-slate-800 px-1 py-0.5 text-slate-300">info</code>、<code className="rounded bg-slate-800 px-1 py-0.5 text-slate-300">proc</code>、<code className="rounded bg-slate-800 px-1 py-0.5 text-slate-300">files</code>、<code className="rounded bg-slate-800 px-1 py-0.5 text-slate-300">shell</code> 等命令</p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

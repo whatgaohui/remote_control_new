@@ -277,3 +277,74 @@ Stage Summary:
 - **Error Logging**: Apps now write error logs to userData directory and show error dialogs on crash
 - **Version v1.2.0**: Both apps updated, rebuilt, and packaged with version in filename
 - **Robust Startup**: Window creation, tray creation, and IPC setup all have proper error handling
+
+---
+Task ID: 8
+Agent: general-purpose
+Task: Completely rewrite Electron apps (v2.0.0) to fix critical Windows startup failures
+
+Work Log:
+- Read worklog.md and all existing source files for both rc-server-gui and rc-client-gui
+- Identified critical v1.2.0 issues that still caused Windows startup failures:
+  1. `show: false` + `ready-to-show`: if `ready-to-show` never fires, window never shows (no fallback)
+  2. No `--no-sandbox` flag on Windows (Electron sandbox issues)
+  3. No `did-fail-load` handler for HTML load failures
+  4. No `unresponsive` / `render-process-gone` handlers
+  5. Error logs in AppData instead of next to exe
+  6. `app.quit()` instead of `app.exit(0)` for second instance (less reliable on Windows)
+  7. No `sandbox: false` in webPreferences (needed for IPC on Windows)
+  8. No `--dev` flag support for DevTools
+- **Rewrote BOTH main.js files (v2.0.0)** with comprehensive fixes:
+  - Added `app.commandLine.appendSwitch('no-sandbox')`, `disable-gpu-sandbox`, `disable-software-rasterizer` after require
+  - Added 5-second timeout fallback: if `ready-to-show` never fires, `mainWindow.show()` is called anyway
+  - Added `mainWindow.webContents.on('did-fail-load', ...)` with fallback error page (red error message in browser)
+  - Added `mainWindow.on('unresponsive', ...)` handler with logging
+  - Added `mainWindow.webContents.on('render-process-gone', ...)` handler with logging
+  - Error logs now written next to exe (`process.cwd()`) with `app.getPath('userData')` fallback
+  - Changed second-instance exit from `app.quit()` to `app.exit(0)` (more reliable on Windows)
+  - Added `sandbox: false` to webPreferences for Windows IPC compatibility
+  - Added `--dev` flag detection with auto-open DevTools and `ELECTRON_DISABLE_SECURITY_WARNINGS`
+  - Added `app.on('will-quit', ...)` cleanup handler
+  - Added `app.on('before-quit', ...)` with logging
+  - Wrapped initialization in try-catch with error dialogs
+  - Added extensive startup logging (platform, Electron/Node/Chrome versions)
+  - Moved `app.on('second-instance', ...)` outside of `gotTheLock` conditional for cleaner code
+- **Updated BOTH package.json files**:
+  - Bumped version to `2.0.0` (major version bump for complete rewrite)
+  - Updated scripts: `start` → `electron . --no-sandbox`, added `dev` → `electron . --no-sandbox --dev`
+  - Added `build:portable` script
+  - Added portable target to win build config with `artifactName`
+- **Updated BOTH src/index.html files**:
+  - Changed all `v1.2.0` references to `v2.0.0` (titlebar, statusbar, terminal banner)
+- **Fixed critical bug during development**:
+  - Initial rewrite placed `app.commandLine.appendSwitch()` BEFORE `require('electron')` which caused `ReferenceError: Cannot access 'app' before initialization`
+  - Fixed by requiring electron first, then calling `app.commandLine.appendSwitch()`
+- **Tested both apps with Xvfb**:
+  - Server: Started successfully, logged "App ready, initializing...", window shown via `ready-to-show`
+  - Client: Started successfully, logged "App ready, initializing...", window shown via `ready-to-show`
+  - Both apps showed all startup steps in logs: version, platform info, IPC setup, window creation
+  - dbus errors are expected in sandbox environment (not relevant for Windows end users)
+- **Built both apps for Windows**:
+  - `npx electron-builder --win --dir` for both server and client
+  - Verified app.asar contains: main.js, preload.js, package.json, src/index.html, src/renderer.js, src/styles.css, node_modules/ws
+  - Verified version 2.0.0 in both asar packages
+- **Created ZIP files and moved to public/downloads/**:
+  - Removed old RC-Server-GUI-v1.2.0.zip and RC-Client-GUI-v1.2.0.zip
+  - Created RC-Server-GUI-v2.0.0.zip (103MB)
+  - Created RC-Client-GUI-v2.0.0.zip (103MB)
+  - Cleaned up dist directories after building
+- **Updated Next.js download page version references**:
+  - Updated MainLayout.tsx DownloadPanel: all v1.2.0 → v2.0.0, download URLs, sizes, changelog, version history
+  - Updated ConnectionPage.tsx: all v1.2.0 → v2.0.0, download URLs, quick start guide references
+- **Preload.js NOT modified**: Kept the same API surface (all IPC calls unchanged)
+- **CSS/styles/renderer.js NOT modified**: Only main.js, package.json, and index.html version refs changed
+
+Stage Summary:
+- **Complete Rewrite v2.0.0**: Both Electron apps completely rewritten for Windows startup robustness
+- **8 Critical Fixes Applied**: no-sandbox flags, 5s show fallback, did-fail-load handler, unresponsive handler, render-process-gone handler, error logs next to exe, sandbox:false, app.exit(0)
+- **Dev Mode Support**: `--dev` flag auto-opens DevTools
+- **Both Apps Tested**: Successfully launch and show window on Linux with Xvfb
+- **Both Apps Built**: Windows x64 unpacked directories packaged as ZIP files
+- **Download Files**: RC-Server-GUI-v2.0.0.zip (103MB), RC-Client-GUI-v2.0.0.zip (103MB)
+- **Web UI Updated**: MainLayout.tsx and ConnectionPage.tsx version refs updated to v2.0.0
+- **All Existing Functionality Preserved**: WebSocket server/client, IPC handlers, tray, config persistence, UI pages all unchanged

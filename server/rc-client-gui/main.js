@@ -1,25 +1,73 @@
 /**
  * RC-Client GUI - Electron Main Process
- * Manages BrowserWindow, WebSocket client, and IPC communication v1.2.0
+ * Manages BrowserWindow, WebSocket client, and IPC communication v2.0.0
+ *
+ * v2.0.0 - Complete rewrite for Windows startup robustness:
+ *  - no-sandbox / disable-gpu-sandbox switches BEFORE anything else
+ *  - show:false + 5s timeout fallback (never leave user with invisible window)
+ *  - did-fail-load / unresponsive / render-process-gone handlers
+ *  - Error logs written next to exe (process.cwd()) with userData fallback
+ *  - app.requestSingleInstanceLock() as FIRST thing after requires
+ *  - app.exit(0) instead of app.quit() for second instance
+ *  - sandbox:false in webPreferences for Windows IPC compatibility
+ *  - --dev flag support for auto-opening DevTools
  */
 
+// ─── CRITICAL: Require electron first, then set sandbox flags ────────────────
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const WebSocket = require('ws');
 const fs = require('fs');
 const os = require('os');
 
-const VERSION = '1.2.0';
+// Sandbox flags must be set before app.ready
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('disable-software-rasterizer');
 
-// ─── 错误日志（最早初始化）──────────────────────────────────────────────────────
-const logFilePath = path.join(app.getPath('userData'), 'rc-client-error.log');
+// ─── Dev mode detection ──────────────────────────────────────────────────────
+const isDev = process.argv.includes('--dev');
+if (isDev) {
+  process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+}
+
+// ─── 防止多实例（必须在最前面）───────────────────────────────────────────────────
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  console.log('另一个实例已在运行，退出...');
+  app.exit(0);  // app.exit(0) is more reliable than app.quit() on Windows
+}
+
+const VERSION = '2.0.0';
+
+// ─── 错误日志（尽早初始化，写文件到exe旁边）──────────────────────────────────────────
+let logFilePath;
+try {
+  logFilePath = path.join(process.cwd(), 'rc-client-error.log');
+  fs.appendFileSync(logFilePath, '', 'utf-8');
+} catch (e) {
+  try {
+    logFilePath = path.join(app.getPath('userData'), 'rc-client-error.log');
+  } catch (e2) {
+    logFilePath = path.join(os.homedir(), 'rc-client-error.log');
+  }
+}
+
 function writeErrorLog(msg) {
   try {
     const line = `[${new Date().toISOString()}] ${msg}\n`;
     fs.appendFileSync(logFilePath, line, 'utf-8');
-    console.error(line);
+    console.log(line);  // Echo to stdout for terminal debugging
   } catch (e) { /* ignore */ }
 }
+
+writeErrorLog(`RC-Client v${VERSION} starting...`);
+writeErrorLog(`Log file: ${logFilePath}`);
+writeErrorLog(`Dev mode: ${isDev}`);
+writeErrorLog(`Platform: ${process.platform} ${process.arch}`);
+writeErrorLog(`Electron: ${process.versions.electron}`);
+writeErrorLog(`Node: ${process.versions.node}`);
+writeErrorLog(`Chrome: ${process.versions.chrome}`);
 
 process.on('uncaughtException', (err) => {
   writeErrorLog(`UNCAUGHT EXCEPTION: ${err.message}\n${err.stack}`);
@@ -31,24 +79,6 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
   writeErrorLog(`UNHANDLED REJECTION: ${reason}`);
 });
-
-writeErrorLog(`RC-Client v${VERSION} starting...`);
-
-// ─── 防止多实例（必须在最前面）───────────────────────────────────────────────────
-const gotTheLock = app.requestSingleInstanceLock();
-if (!gotTheLock) {
-  console.log('另一个实例已在运行，退出...');
-  app.quit();
-} else {
-  app.on('second-instance', () => {
-    writeErrorLog('检测到第二个实例尝试启动');
-    if (mainWindow) {
-      if (!mainWindow.isVisible()) mainWindow.show();
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-    }
-  });
-}
 
 // ─── Global State ────────────────────────────────────────────────────────────
 let mainWindow = null;
@@ -95,7 +125,6 @@ function addToHistory(config) {
     password: !!config.password,
     lastConnected: new Date().toISOString()
   };
-  // Remove duplicate
   const idx = history.findIndex(h => h.host === entry.host && h.port === entry.port);
   if (idx !== -1) history.splice(idx, 1);
   history.unshift(entry);
@@ -132,6 +161,8 @@ function saveConfigToFile(config) {
 
 // ─── Window Creation ─────────────────────────────────────────────────────────
 function createWindow() {
+  writeErrorLog('Creating main window...');
+
   try {
     mainWindow = new BrowserWindow({
       width: 1100,
@@ -144,17 +175,64 @@ function createWindow() {
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
         contextIsolation: true,
-        nodeIntegration: false
+        nodeIntegration: false,
+        sandbox: false,  // Needed for some IPC on Windows
       },
     });
 
+    writeErrorLog('BrowserWindow created, loading index.html...');
+
     mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
+    // ─── CRITICAL: Show window with fallback ───────────────────────────────
+    let windowShown = false;
+
     mainWindow.once('ready-to-show', () => {
-      mainWindow.show();
-      writeErrorLog('主窗口已显示');
+      if (!windowShown) {
+        windowShown = true;
+        mainWindow.show();
+        writeErrorLog('主窗口已显示 (via ready-to-show)');
+      }
     });
 
+    // Fallback: if ready-to-show never fires, force show after 5 seconds
+    setTimeout(() => {
+      if (!windowShown && mainWindow && !mainWindow.isDestroyed()) {
+        windowShown = true;
+        mainWindow.show();
+        writeErrorLog('主窗口已显示 (via 5s fallback timeout)');
+      }
+    }, 5000);
+
+    // ─── Error handlers ───────────────────────────────────────────────────
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDesc, validatedURL) => {
+      writeErrorLog(`页面加载失败: ${errorCode} ${errorDesc} URL: ${validatedURL}`);
+      try {
+        mainWindow.webContents.executeJavaScript(`
+          document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:monospace;text-align:center;padding:40px;">' +
+            '<div><h2 style="font-size:24px;margin-bottom:16px;">页面加载失败</h2>' +
+            '<p style="color:#94a3b8;">错误代码: ${errorCode}</p>' +
+            '<p style="color:#94a3b8;">${errorDesc}</p>' +
+            '<p style="color:#64748b;margin-top:20px;">请检查应用程序文件是否完整</p></div></div>';
+        `);
+        if (!windowShown) {
+          windowShown = true;
+          mainWindow.show();
+        }
+      } catch (e) {
+        writeErrorLog(`Failed to show error page: ${e.message}`);
+      }
+    });
+
+    mainWindow.on('unresponsive', () => {
+      writeErrorLog('主窗口无响应 (unresponsive)');
+    });
+
+    mainWindow.webContents.on('render-process-gone', (event, details) => {
+      writeErrorLog(`渲染进程崩溃: reason=${details.reason} exitCode=${details.exitCode}`);
+    });
+
+    // ─── Window lifecycle ─────────────────────────────────────────────────
     mainWindow.on('closed', () => {
       mainWindow = null;
       if (ws) {
@@ -167,10 +245,18 @@ function createWindow() {
       }
     });
 
+    // Dev mode: auto-open DevTools
+    if (isDev) {
+      mainWindow.webContents.openDevTools();
+      writeErrorLog('DevTools opened (--dev flag)');
+    }
+
     writeErrorLog('主窗口创建成功');
   } catch (err) {
     writeErrorLog(`创建窗口失败: ${err.message}\n${err.stack}`);
-    dialog.showErrorBox('RC-Client 错误', `创建窗口失败:\n${err.message}`);
+    try {
+      dialog.showErrorBox('RC-Client 错误', `创建窗口失败:\n${err.message}`);
+    } catch (e) { /* ignore */ }
   }
 }
 
@@ -347,6 +433,8 @@ function startPing() {
 }
 
 // ─── IPC Handlers ────────────────────────────────────────────────────────────
+writeErrorLog('Setting up IPC handlers...');
+
 ipcMain.handle('connect', (event, config) => {
   return connectToServer(config);
 });
@@ -463,6 +551,8 @@ ipcMain.handle('get-version', () => {
   return VERSION;
 });
 
+writeErrorLog('IPC handlers set up successfully');
+
 // ─── Periodic status updates ─────────────────────────────────────────────────
 setInterval(() => {
   if (isConnected && isAuthenticated) {
@@ -479,21 +569,44 @@ setInterval(() => {
   });
 }, 3000);
 
+// ─── Second instance handler ─────────────────────────────────────────────────
+app.on('second-instance', () => {
+  writeErrorLog('检测到第二个实例尝试启动');
+  if (mainWindow) {
+    if (!mainWindow.isVisible()) mainWindow.show();
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 // ─── App Lifecycle ───────────────────────────────────────────────────────────
+writeErrorLog('Waiting for app.whenReady...');
+
 app.whenReady().then(() => {
   writeErrorLog('App ready, initializing...');
-  createWindow();
+  try {
+    createWindow();
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    } else if (mainWindow) {
-      mainWindow.show();
-    }
-  });
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      } else if (mainWindow) {
+        mainWindow.show();
+      }
+    });
+
+    writeErrorLog('App initialization complete');
+  } catch (err) {
+    writeErrorLog(`Initialization error: ${err.message}\n${err.stack}`);
+    try {
+      dialog.showErrorBox('RC-Client 错误', `应用初始化失败:\n${err.message}`);
+    } catch (e) { /* ignore */ }
+  }
 }).catch((err) => {
   writeErrorLog(`app.whenReady failed: ${err.message}`);
-  dialog.showErrorBox('RC-Client 错误', `应用初始化失败:\n${err.message}`);
+  try {
+    dialog.showErrorBox('RC-Client 错误', `应用初始化失败:\n${err.message}`);
+  } catch (e) { /* ignore */ }
 });
 
 app.on('window-all-closed', () => {
@@ -502,4 +615,12 @@ app.on('window-all-closed', () => {
     ws = null;
   }
   app.quit();
+});
+
+app.on('will-quit', () => {
+  writeErrorLog('App will-quit, cleaning up...');
+  try {
+    if (ws) { ws.close(); ws = null; }
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+  } catch (e) { /* ignore */ }
 });

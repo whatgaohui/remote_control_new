@@ -1725,37 +1725,37 @@ function LogsPanel() {
 function DownloadPanel() {
   const downloads = [
     {
-      name: 'RC-Server-GUI v1.2.0',
+      name: 'RC-Server-GUI v2.0.0',
       desc: '远程控制服务端 - 安装在需要被远程控制的电脑上（含图形界面）',
-      version: 'v1.2.0',
-      size: '94 MB',
+      version: 'v2.0.0',
+      size: '103 MB',
       platform: 'Windows x64',
       icon: Monitor,
       color: 'text-cyan-400',
       bg: 'bg-cyan-500/10',
-      hash: 'RC-Server-GUI-v1.2.0.zip',
-      changelog: '修复启动服务按钮无响应问题，新增版本号显示',
-      downloadUrl: '/downloads/RC-Server-GUI-v1.2.0.zip',
+      hash: 'RC-Server-GUI-v2.0.0.zip',
+      changelog: '完全重写，修复Windows启动失败问题，增强稳定性',
+      downloadUrl: '/downloads/RC-Server-GUI-v2.0.0.zip',
       exeName: 'RC-Server.exe',
     },
     {
-      name: 'RC-Client-GUI v1.2.0',
+      name: 'RC-Client-GUI v2.0.0',
       desc: '远程控制客户端 - 安装在用于远程控制的电脑上（含图形界面）',
-      version: 'v1.2.0',
-      size: '94 MB',
+      version: 'v2.0.0',
+      size: '103 MB',
       platform: 'Windows x64',
       icon: Command,
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
-      hash: 'RC-Client-GUI-v1.2.0.zip',
-      changelog: '修复连接问题，新增版本号显示',
-      downloadUrl: '/downloads/RC-Client-GUI-v1.2.0.zip',
+      hash: 'RC-Client-GUI-v2.0.0.zip',
+      changelog: '完全重写，修复Windows启动失败问题，增强稳定性',
+      downloadUrl: '/downloads/RC-Client-GUI-v2.0.0.zip',
       exeName: 'RC-Client.exe',
     },
     {
       name: 'rc-server-linux',
       desc: 'Linux 服务端 - 适用于 Ubuntu/Debian/CentOS',
-      version: 'v1.2.0',
+      version: 'v2.0.0',
       size: '9.8 MB',
       platform: 'Linux',
       icon: Server,
@@ -1784,10 +1784,10 @@ function DownloadPanel() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-white">最新版本 v1.2.0</p>
+                <p className="text-sm font-semibold text-white">最新版本 v2.0.0</p>
                 <Badge variant="outline" className="text-[10px] border-emerald-500/30 bg-emerald-500/10 text-emerald-400">NEW</Badge>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">发布日期: 2025-04-25 | 修复启动按钮无响应问题，新增版本号显示</p>
+              <p className="text-xs text-slate-400 mt-0.5">发布日期: 2025-04-25 | 完全重写，修复Windows启动失败问题，增强稳定性</p>
             </div>
           </div>
         </CardContent>
@@ -1848,7 +1848,7 @@ function DownloadPanel() {
         <CardContent className="pt-0">
           <div className="space-y-3">
             {[
-              { ver: 'v1.2.0', date: '2025-04-25', changes: ['修复启动服务按钮无响应问题(CSP)', '新增版本号显示(标题栏/状态栏)', '新增get-version IPC接口', '更新下载文件名带版本号'], current: true },
+              { ver: 'v2.0.0', date: '2025-04-25', changes: ['完全重写main.js修复Windows启动失败', '添加no-sandbox/disable-gpu-sandbox开关', '添加5秒超时窗口显示兜底', '添加did-fail-load/unresponsive/render-process-gone处理', '错误日志写到exe旁边', 'sandbox:false兼容Windows IPC', '--dev参数支持DevTools', 'app.exit(0)替代app.quit()更可靠'], current: true },
               { ver: 'v1.0.0', date: '2025-04-24', changes: ['初始发布', '图形界面服务端/客户端', 'WebSocket远程控制', '终端/文件/进程管理'], current: false },
             ].map((release) => (
               <div key={release.ver} className="flex gap-3">

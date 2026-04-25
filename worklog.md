@@ -199,3 +199,43 @@ Stage Summary:
 - Both server and client GUI apps now use addEventListener + event delegation instead of inline onclick
 - Web app tested and verified working via agent-browser
 - CSP updated to `script-src 'self' 'unsafe-inline'` for both Electron apps
+
+---
+Task ID: 6
+Agent: main
+Task: Rebuild Electron apps with CSP fix + add version numbers + update downloads
+
+Work Log:
+- Identified root cause of user's issue: ZIP files in public/downloads/ were built BEFORE CSP fix was applied
+- Updated version from 1.0.0 to 1.1.0 in both apps:
+  - rc-server-gui/package.json: version → "1.1.0"
+  - rc-server-gui/main.js: VERSION = '1.1.0'
+  - rc-server-gui/src/index.html: titlebar v1.1.0, statusbar v1.1.0
+  - rc-client-gui/package.json: version → "1.1.0"
+  - rc-client-gui/main.js: VERSION = '1.1.0'
+  - rc-client-gui/src/index.html: titlebar v1.1.0, terminal v1.1.0, statusbar v1.1.0
+- Added get-version IPC handler to both apps (main.js + preload.js)
+- Added version display to server status bar (📦 v1.1.0)
+- Rebuilt both Electron apps using npm install + electron-builder --win --dir
+- Verified version 1.1.0 is in built app.asar package.json
+- Created new ZIP files with version in filename:
+  - RC-Server-GUI-v1.1.0.zip (94MB)
+  - RC-Client-GUI-v1.1.0.zip (94MB)
+- Removed old ZIP files (RC-Server-GUI.zip, RC-Client-GUI.zip)
+- Updated Next.js DownloadPanel:
+  - Updated download card names to include version (RC-Server-GUI v1.1.0)
+  - Added downloadUrl and exeName fields to download items
+  - Download buttons now link to actual ZIP files with <a href download>
+  - Linux version shows "即将推出" disabled button
+  - Updated version banner to v1.1.0 with correct date
+  - Updated version history with actual releases
+  - Updated installation instructions for GUI apps
+- Ran lint successfully with no errors
+- Cleaned up dist directories after building
+
+Stage Summary:
+- **Root Cause**: ZIP files contained old v1.0.0 code without CSP fix → rebuilt with v1.1.0
+- **Version Numbers**: Both apps now show v1.1.0 in titlebar, statusbar, and terminal
+- **Download Files**: RC-Server-GUI-v1.1.0.zip and RC-Client-GUI-v1.1.0.zip (version in filename so users can verify)
+- **Download Page**: Now links to actual files, shows version prominently, has real version history
+- **New IPC**: get-version handler added for programmatic version checking

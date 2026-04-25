@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld('api', {
   windowClose: () => ipcRenderer.invoke('window-close'),
   windowIsMaximized: () => ipcRenderer.invoke('window-is-maximized'),
 
+  // Version
+  getVersion: () => ipcRenderer.invoke('get-version'),
+
   // Event listeners
   onConnected: (callback) => {
     ipcRenderer.on('connected', (_, data) => callback(data));

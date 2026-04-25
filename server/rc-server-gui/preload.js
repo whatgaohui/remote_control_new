@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // 系统信息
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+  getVersion: () => ipcRenderer.invoke('get-version'),
 
   // 窗口控制
   minimizeWindow: () => ipcRenderer.invoke('minimize-window'),

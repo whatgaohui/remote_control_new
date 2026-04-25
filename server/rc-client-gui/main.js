@@ -9,7 +9,7 @@ const WebSocket = require('ws');
 const fs = require('fs');
 const os = require('os');
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 // ─── Global State ────────────────────────────────────────────────────────────
 let mainWindow = null;
@@ -409,6 +409,10 @@ ipcMain.handle('window-close', () => {
 
 ipcMain.handle('window-is-maximized', () => {
   return mainWindow ? mainWindow.isMaximized() : false;
+});
+
+ipcMain.handle('get-version', () => {
+  return VERSION;
 });
 
 // ─── Periodic status updates ─────────────────────────────────────────────────

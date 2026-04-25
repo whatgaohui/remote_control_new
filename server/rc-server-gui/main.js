@@ -11,7 +11,7 @@ const os = require('os');
 const fs = require('fs');
 
 // ─── 常量 ──────────────────────────────────────────────────────────────────────
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const DEFAULT_PORT = 9527;
 const DEFAULT_HOST = '0.0.0.0';
 const MAX_LOG_ENTRIES = 1000;
@@ -540,6 +540,10 @@ function setupIPC() {
 
   ipcMain.handle('get-system-info', () => {
     return getSystemInfo();
+  });
+
+  ipcMain.handle('get-version', () => {
+    return VERSION;
   });
 
   ipcMain.handle('minimize-window', () => {

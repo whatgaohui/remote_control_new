@@ -1725,40 +1725,46 @@ function LogsPanel() {
 function DownloadPanel() {
   const downloads = [
     {
-      name: 'rc-server.exe',
-      desc: '远程控制服务端 - 安装在需要被远程控制的电脑上',
-      version: 'v2.1.0',
-      size: '12.5 MB',
-      platform: 'Windows',
+      name: 'RC-Server-GUI v1.1.0',
+      desc: '远程控制服务端 - 安装在需要被远程控制的电脑上（含图形界面）',
+      version: 'v1.1.0',
+      size: '94 MB',
+      platform: 'Windows x64',
       icon: Monitor,
       color: 'text-cyan-400',
       bg: 'bg-cyan-500/10',
-      hash: 'SHA256: a3f2c8d1e5b7...',
-      changelog: '修复连接稳定性问题，新增文件管理功能',
+      hash: 'RC-Server-GUI-v1.1.0.zip',
+      changelog: '修复启动服务按钮无响应问题，新增版本号显示',
+      downloadUrl: '/downloads/RC-Server-GUI-v1.1.0.zip',
+      exeName: 'RC-Server.exe',
     },
     {
-      name: 'rc-client.exe',
-      desc: '远程控制客户端 - 安装在用于远程控制的电脑上',
-      version: 'v2.1.0',
-      size: '8.3 MB',
-      platform: 'Windows',
+      name: 'RC-Client-GUI v1.1.0',
+      desc: '远程控制客户端 - 安装在用于远程控制的电脑上（含图形界面）',
+      version: 'v1.1.0',
+      size: '94 MB',
+      platform: 'Windows x64',
       icon: Command,
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
-      hash: 'SHA256: b7e4d2a9f1c3...',
-      changelog: '优化界面显示，增加音频传输功能',
+      hash: 'RC-Client-GUI-v1.1.0.zip',
+      changelog: '修复连接问题，新增版本号显示',
+      downloadUrl: '/downloads/RC-Client-GUI-v1.1.0.zip',
+      exeName: 'RC-Client.exe',
     },
     {
       name: 'rc-server-linux',
       desc: 'Linux 服务端 - 适用于 Ubuntu/Debian/CentOS',
-      version: 'v2.1.0',
+      version: 'v1.1.0',
       size: '9.8 MB',
       platform: 'Linux',
       icon: Server,
       color: 'text-orange-400',
       bg: 'bg-orange-500/10',
-      hash: 'SHA256: c1e8f3b2a5d7...',
+      hash: '命令行版本',
       changelog: '支持 systemd 服务，新增系统监控功能',
+      downloadUrl: '',
+      exeName: 'rc-server',
     },
   ];
 
@@ -1778,10 +1784,10 @@ function DownloadPanel() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-white">最新版本 v2.1.0</p>
+                <p className="text-sm font-semibold text-white">最新版本 v1.1.0</p>
                 <Badge variant="outline" className="text-[10px] border-emerald-500/30 bg-emerald-500/10 text-emerald-400">NEW</Badge>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">发布日期: 2024-12-15 | 支持 Windows / Linux / macOS</p>
+              <p className="text-xs text-slate-400 mt-0.5">发布日期: 2025-04-25 | 修复启动按钮无响应问题，新增版本号显示</p>
             </div>
           </div>
         </CardContent>
@@ -1805,9 +1811,17 @@ function DownloadPanel() {
                   </div>
                   <p className="text-[10px] text-slate-600 mt-2 font-mono">{dl.hash}</p>
                   <p className="text-[10px] text-slate-500 mt-1">📝 {dl.changelog}</p>
-                  <Button className="mt-4 w-full gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/20" size="sm">
-                    <Download className="h-4 w-4" /> 下载
-                  </Button>
+                  {dl.downloadUrl ? (
+                    <a href={dl.downloadUrl} download>
+                      <Button className="mt-4 w-full gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/20" size="sm">
+                        <Download className="h-4 w-4" /> 下载 {dl.exeName}
+                      </Button>
+                    </a>
+                  ) : (
+                    <Button className="mt-4 w-full gap-2 bg-slate-700 text-slate-400 cursor-not-allowed" size="sm" disabled>
+                      <Download className="h-4 w-4" /> 即将推出
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -1818,16 +1832,13 @@ function DownloadPanel() {
       <Card className={`${darkCard} shadow-lg`}>
         <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-300 flex items-center gap-2"><Info className="h-4 w-4 text-teal-400" /> 安装说明</CardTitle></CardHeader>
         <CardContent className="pt-0 text-xs text-slate-400 space-y-2">
-          <p>1. 在被控端电脑上运行 <code className="bg-slate-800 border border-slate-700 px-1 py-0.5 rounded text-emerald-400">rc-server.exe</code>，默认监听端口 9527</p>
-          <p>2. 确保防火墙允许 9527 端口的入站连接</p>
-          <p>3. 在控制端使用本应用连接到被控端的 IP 地址和端口</p>
-          <p>4. 首次连接需要在被控端确认授权</p>
+          <p>1. 下载 ZIP 文件并解压到任意目录</p>
+          <p>2. 在被控端电脑上运行 <code className="bg-slate-800 border border-slate-700 px-1 py-0.5 rounded text-emerald-400">RC-Server.exe</code>，点击"启动服务"按钮启动（默认端口 9527）</p>
+          <p>3. 确保防火墙允许 9527 端口的入站连接</p>
+          <p>4. 在控制端运行 <code className="bg-slate-800 border border-slate-700 px-1 py-0.5 rounded text-cyan-400">RC-Client.exe</code>，输入服务端 IP 地址连接</p>
+          <p>5. 连接成功后即可使用终端、文件管理、进程管理等功能</p>
           <Separator className="bg-slate-800 my-3" />
-          <p className="text-slate-500">命令行参数：</p>
-          <div className="bg-slate-900 p-3 rounded-lg font-mono space-y-1 mt-1">
-            <p><span className="text-cyan-400">rc-server.exe</span> <span className="text-slate-500">--port</span> <span className="text-amber-400">9527</span> <span className="text-slate-500">--password</span> <span className="text-emerald-400">你的密码</span></p>
-            <p><span className="text-cyan-400">rc-client.exe</span> <span className="text-slate-500">--host</span> <span className="text-amber-400">192.168.1.100</span> <span className="text-slate-500">--password</span> <span className="text-emerald-400">你的密码</span></p>
-          </div>
+          <p className="text-slate-500">提示：标题栏和状态栏显示当前软件版本号，请确保使用最新版本</p>
         </CardContent>
       </Card>
 
@@ -1837,9 +1848,8 @@ function DownloadPanel() {
         <CardContent className="pt-0">
           <div className="space-y-3">
             {[
-              { ver: 'v2.1.0', date: '2024-12-15', changes: ['新增音频传输功能', '优化连接稳定性', '修复文件传输进度显示'], current: true },
-              { ver: 'v2.0.0', date: '2024-11-20', changes: ['全新界面设计', '支持多显示器', '新增进程管理'], current: false },
-              { ver: 'v1.5.0', date: '2024-10-05', changes: ['新增剪贴板同步', '优化终端性能', '修复内存泄漏'], current: false },
+              { ver: 'v1.1.0', date: '2025-04-25', changes: ['修复启动服务按钮无响应问题(CSP)', '新增版本号显示(标题栏/状态栏)', '新增get-version IPC接口', '更新下载文件名带版本号'], current: true },
+              { ver: 'v1.0.0', date: '2025-04-24', changes: ['初始发布', '图形界面服务端/客户端', 'WebSocket远程控制', '终端/文件/进程管理'], current: false },
             ].map((release) => (
               <div key={release.ver} className="flex gap-3">
                 <div className="flex flex-col items-center">

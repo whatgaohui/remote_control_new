@@ -1,6 +1,6 @@
 {
   "name": "rc-server-gui",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "RC-Server 远程控制服务端 - 桌面版",
   "author": "RC-Team",
   "main": "main.js",

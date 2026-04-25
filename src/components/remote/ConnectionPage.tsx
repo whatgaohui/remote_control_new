@@ -757,7 +757,10 @@ export default function ConnectionPage() {
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
                     >
-                      <Card className="group relative border-slate-800 bg-slate-900/60 backdrop-blur-sm transition-all duration-300 hover:border-slate-700 hover:shadow-lg hover:shadow-emerald-500/5">
+                      <Card
+                        className={`group relative border-slate-800 bg-slate-900/60 backdrop-blur-sm transition-all duration-300 ${isOnline ? 'cursor-pointer hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/10' : 'hover:border-slate-700'}`}
+                        onClick={() => isOnline && handleConnect(device)}
+                      >
                         <CardContent className="p-4">
                           {/* Top row: OS icon + name + badges */}
                           <div className="mb-3 flex items-start gap-3">
@@ -915,7 +918,10 @@ export default function ConnectionPage() {
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.3, delay: index * 0.03 }}
                     >
-                      <Card className="group border-slate-800 bg-slate-900/60 backdrop-blur-sm transition-all duration-300 hover:border-slate-700 hover:shadow-lg hover:shadow-emerald-500/5">
+                      <Card
+                        className={`group border-slate-800 bg-slate-900/60 backdrop-blur-sm transition-all duration-300 ${isOnline ? 'cursor-pointer hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/10' : 'hover:border-slate-700'}`}
+                        onClick={() => isOnline && handleConnect(device)}
+                      >
                         <CardContent className="flex items-center gap-4 p-4">
                           {/* OS icon */}
                           <div className="relative shrink-0">

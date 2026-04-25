@@ -23,6 +23,7 @@ interface RemoteState {
   terminalHistory: string[];
   notifications: { id: string; message: string; time: string; read: boolean }[];
   sidebarCollapsed: boolean;
+  isConnecting: boolean;
   fileSearch: string;
   processSearch: string;
   processSortBy: 'cpu' | 'memory' | 'name';
@@ -132,6 +133,7 @@ export const useRemoteStore = create<RemoteState & RemoteActions>((set, get) => 
   terminalHistory: [],
   notifications: [],
   sidebarCollapsed: false,
+  isConnecting: false,
   fileSearch: '',
   processSearch: '',
   processSortBy: 'cpu',
@@ -140,6 +142,9 @@ export const useRemoteStore = create<RemoteState & RemoteActions>((set, get) => 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   connect: async (device) => {
+    set({ isConnecting: true });
+    // Simulate connection delay for visual feedback
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     try {
       const res = await fetch('/api/connections', {
         method: 'POST',
@@ -147,13 +152,13 @@ export const useRemoteStore = create<RemoteState & RemoteActions>((set, get) => 
         body: JSON.stringify({ deviceId: device.id }),
       });
       if (res.ok) {
-        set({ isConnected: true, connectedDevice: device, connectStartTime: Date.now(), latency: 15, latencyHistory: [15] });
+        set({ isConnecting: false, isConnected: true, connectedDevice: device, connectStartTime: Date.now(), latency: 15, latencyHistory: [15] });
         get().startLatencyMonitor();
         toast.success(`已连接到 ${device.name}`);
         get().fetchFiles(); get().fetchProcesses(); get().fetchSystemInfo(); get().fetchOperationLogs(); get().fetchFileTransfers();
       } else { throw new Error('连接失败'); }
     } catch {
-      set({ isConnected: true, connectedDevice: device, connectStartTime: Date.now(), latency: 15, latencyHistory: [15] });
+      set({ isConnecting: false, isConnected: true, connectedDevice: device, connectStartTime: Date.now(), latency: 15, latencyHistory: [15] });
       get().startLatencyMonitor();
       toast.success(`已连接到 ${device.name}（模拟模式）`);
     }

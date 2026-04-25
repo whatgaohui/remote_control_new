@@ -1,0 +1,42 @@
+{
+  "name": "rc-client-gui",
+  "version": "1.0.0",
+  "description": "RC-Client 远程控制客户端 - 桌面版",
+  "author": "RC-Team",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --dir",
+    "build:zip": "electron-builder --win zip"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.rc.client-gui",
+    "productName": "RC-Client",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": ["x64"]
+        }
+      ],
+      "signAndEditExecutable": false,
+      "icon": null
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ]
+  }
+}

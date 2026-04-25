@@ -55,3 +55,10 @@ server.log
 # Exe files (too large for GitHub, compiled from server/ source)
 downloads/*.exe
 public/downloads/*.exe
+# Electron build artifacts
+server/rc-server-gui/dist
+server/rc-server-gui/node_modules
+server/rc-client-gui/dist
+server/rc-client-gui/node_modules
+# Large zip files (download from web)
+public/downloads/*.zip

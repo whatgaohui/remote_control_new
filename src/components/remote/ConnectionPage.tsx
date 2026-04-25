@@ -488,15 +488,16 @@ export default function ConnectionPage() {
             <CardHeader className="pb-0">
               <CardTitle className="flex items-center gap-2 text-lg text-white">
                 <Download className="h-5 w-5 text-cyan-400" />
-                下载客户端程序
+                下载桌面客户端
+                <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px]">GUI 图形界面</Badge>
               </CardTitle>
               <CardDescription className="text-slate-400">
-                下载并运行程序，即可开始远程控制
+                下载带界面的桌面版程序，无需命令行操作
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
               <div className="grid gap-4 sm:grid-cols-2">
-                {/* RC-Server */}
+                {/* RC-Server GUI */}
                 <div className="group rounded-xl border border-slate-700/50 bg-slate-800/40 p-4 transition-all hover:border-emerald-500/30 hover:bg-slate-800/60">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
@@ -504,31 +505,39 @@ export default function ConnectionPage() {
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-white">RC-Server 服务端</h3>
-                      <p className="text-xs text-slate-500">运行在被控端 PC 上</p>
+                      <p className="text-xs text-slate-500">带界面的 Windows 桌面版 · ~103MB</p>
                     </div>
                   </div>
                   <p className="mb-3 text-xs text-slate-400 leading-relaxed">
-                    在需要被远程控制的电脑上运行此程序，它将监听端口等待客户端连接。支持密码保护、系统信息采集、文件管理等功能。
+                    在被控端电脑上运行，图形界面一键启动/停止服务，实时查看连接状态和运行日志，支持系统托盘最小化。
                   </p>
-                  <div className="mb-3 rounded-lg bg-slate-900/60 p-2">
-                    <p className="text-[10px] text-slate-500 mb-1">使用方法：</p>
-                    <code className="text-[11px] text-emerald-400/90">
-                      rc-server.exe --port 9527 --password 你的密码
-                    </code>
+                  <div className="mb-3 space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="text-emerald-400">✓</span> 图形界面控制服务启停
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="text-emerald-400">✓</span> 实时运行日志查看
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="text-emerald-400">✓</span> 连接管理与系统信息
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="text-emerald-400">✓</span> 系统托盘 &amp; 密码保护
+                    </div>
                   </div>
                   <Button
                     asChild
                     size="sm"
                     className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500"
                   >
-                    <a href="/downloads/rc-server.exe" download>
+                    <a href="/downloads/RC-Server-GUI.zip" download>
                       <Download className="mr-1.5 h-4 w-4" />
-                      下载 rc-server.exe
+                      下载 RC-Server 桌面版
                     </a>
                   </Button>
                 </div>
 
-                {/* RC-Client */}
+                {/* RC-Client GUI */}
                 <div className="group rounded-xl border border-slate-700/50 bg-slate-800/40 p-4 transition-all hover:border-cyan-500/30 hover:bg-slate-800/60">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10">
@@ -536,26 +545,34 @@ export default function ConnectionPage() {
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-white">RC-Client 客户端</h3>
-                      <p className="text-xs text-slate-500">运行在控制端 PC 上</p>
+                      <p className="text-xs text-slate-500">带界面的 Windows 桌面版 · ~103MB</p>
                     </div>
                   </div>
                   <p className="mb-3 text-xs text-slate-400 leading-relaxed">
-                    在你用于远程控制的电脑上运行此程序，连接到服务端后即可查看系统信息、管理文件、执行命令等操作。
+                    在控制端电脑上运行，图形界面连接远程服务端，支持系统信息查看、文件管理、远程终端等功能。
                   </p>
-                  <div className="mb-3 rounded-lg bg-slate-900/60 p-2">
-                    <p className="text-[10px] text-slate-500 mb-1">使用方法：</p>
-                    <code className="text-[11px] text-cyan-400/90">
-                      rc-client.exe --host 192.168.1.100 --password 你的密码
-                    </code>
+                  <div className="mb-3 space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="text-cyan-400">✓</span> 图形界面连接远程服务
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="text-cyan-400">✓</span> 系统信息 &amp; 进程管理
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="text-cyan-400">✓</span> 文件浏览 &amp; 远程终端
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="text-cyan-400">✓</span> 自动重连 &amp; 连接历史
+                    </div>
                   </div>
                   <Button
                     asChild
                     size="sm"
                     className="w-full bg-gradient-to-r from-cyan-600 to-sky-600 text-white shadow-lg shadow-cyan-600/20 hover:from-cyan-500 hover:to-sky-500"
                   >
-                    <a href="/downloads/rc-client.exe" download>
+                    <a href="/downloads/RC-Client-GUI.zip" download>
                       <Download className="mr-1.5 h-4 w-4" />
-                      下载 rc-client.exe
+                      下载 RC-Client 桌面版
                     </a>
                   </Button>
                 </div>
@@ -564,12 +581,13 @@ export default function ConnectionPage() {
               {/* Usage guide */}
               <div className="mt-4 rounded-lg border border-slate-700/30 bg-slate-900/40 p-3">
                 <div className="flex items-start gap-2">
-                  <TerminalSquare className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                  <MonitorSmartphone className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                   <div className="text-xs text-slate-400 leading-relaxed">
                     <p className="mb-1 font-medium text-slate-300">快速开始：</p>
-                    <p>1. 在被控电脑上运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">rc-server.exe</code>，默认监听 9527 端口</p>
-                    <p>2. 在控制电脑上运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-cyan-400">rc-client.exe --host 被控端IP</code></p>
-                    <p>3. 连接成功后可使用 <code className="rounded bg-slate-800 px-1 py-0.5 text-slate-300">info</code>、<code className="rounded bg-slate-800 px-1 py-0.5 text-slate-300">proc</code>、<code className="rounded bg-slate-800 px-1 py-0.5 text-slate-300">files</code>、<code className="rounded bg-slate-800 px-1 py-0.5 text-slate-300">shell</code> 等命令</p>
+                    <p>1. 下载并解压 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">RC-Server-GUI.zip</code>，双击运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">RC-Server.exe</code></p>
+                    <p>2. 在服务端界面点击 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">启动服务</code> 按钮，默认监听 9527 端口</p>
+                    <p>3. 下载并解压 <code className="rounded bg-slate-800 px-1 py-0.5 text-cyan-400">RC-Client-GUI.zip</code>，双击运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-cyan-400">RC-Client.exe</code></p>
+                    <p>4. 在客户端输入服务端 IP 地址，点击连接即可开始远程控制</p>
                   </div>
                 </div>
               </div>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';">
+  <title>RC-Client 远程控制客户端</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ═══ Title Bar ═══ -->
+    <div class="titlebar">
+      <div class="titlebar-icon">⚡</div>
+      <div class="titlebar-title">RC-Client 远程控制客户端</div>
+      <div class="titlebar-version">v1.0.0</div>
+      <div class="titlebar-spacer"></div>
+      <div class="titlebar-controls">
+        <button class="titlebar-btn" id="btn-minimize" title="最小化">─</button>
+        <button class="titlebar-btn" id="btn-maximize" title="最大化">□</button>
+        <button class="titlebar-btn close" id="btn-close" title="关闭">✕</button>
+      </div>
+    </div>
+
+    <!-- ═══ Main Content ═══ -->
+    <div class="main-content">
+      <!-- ═══ Sidebar ═══ -->
+      <div class="sidebar">
+        <div class="sidebar-section-title">导航</div>
+        <div class="sidebar-nav">
+          <button class="nav-item active" data-page="connect">
+            <span class="nav-icon">🔗</span>
+            <span class="nav-label">连接</span>
+          </button>
+          <button class="nav-item" data-page="system">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">系统信息</span>
+          </button>
+          <button class="nav-item" data-page="files">
+            <span class="nav-icon">📁</span>
+            <span class="nav-label">文件管理</span>
+          </button>
+          <button class="nav-item" data-page="processes">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">进程管理</span>
+          </button>
+          <button class="nav-item" data-page="terminal">
+            <span class="nav-icon">💻</span>
+            <span class="nav-label">远程终端</span>
+          </button>
+          <button class="nav-item" data-page="screen">
+            <span class="nav-icon">🖥️</span>
+            <span class="nav-label">屏幕控制</span>
+          </button>
+        </div>
+
+        <div class="sidebar-section-title" style="margin-top: 16px;">系统</div>
+        <div class="sidebar-nav">
+          <button class="nav-item" data-page="settings">
+            <span class="nav-icon">🔧</span>
+            <span class="nav-label">设置</span>
+          </button>
+        </div>
+
+        <!-- Sidebar footer - connection status -->
+        <div class="sidebar-footer">
+          <div class="sidebar-connection-indicator">
+            <div class="connection-dot" id="sidebar-dot"></div>
+            <span id="sidebar-status">未连接</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Content Panel ═══ -->
+      <div class="content-panel">
+        <!-- Connection Bar -->
+        <div class="connection-bar">
+          <div class="connection-bar-status">
+            <div class="dot" id="conn-bar-dot"></div>
+            <span id="conn-bar-status-text">未连接</span>
+          </div>
+          <div class="connection-bar-address" id="conn-bar-address">—</div>
+          <div class="connection-bar-spacer"></div>
+          <div class="connection-bar-actions">
+            <button class="btn btn-sm btn-ghost" id="conn-bar-ping" disabled>📡 Ping</button>
+            <button class="btn btn-sm btn-primary" id="conn-bar-connect">🔗 连接</button>
+          </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+
+          <!-- ═══════════════════════════════════════════════════════════
+               CONNECT PAGE
+               ═══════════════════════════════════════════════════════════ -->
+          <div class="page active" id="page-connect">
+            <div class="connect-container">
+              <h1 class="page-title">🔗 连接远程服务端</h1>
+              <p class="page-subtitle">输入服务端地址和密码以建立远程控制连接</p>
+
+              <!-- Connecting Animation -->
+              <div class="connect-animation" id="connect-animation">
+                <div class="connect-radar">
+                  <div class="connect-radar-ring"></div>
+                </div>
+                <div class="connect-text" id="connect-anim-text">正在连接...</div>
+                <div class="connect-steps">
+                  <div class="connect-step" id="step-tcp">
+                    <div class="step-dot"></div>
+                    <span>TCP连接</span>
+                  </div>
+                  <div class="connect-step" id="step-ws">
+                    <div class="step-dot"></div>
+                    <span>WebSocket握手</span>
+                  </div>
+                  <div class="connect-step" id="step-auth">
+                    <div class="step-dot"></div>
+                    <span>身份验证</span>
+                  </div>
+                  <div class="connect-step" id="step-ready">
+                    <div class="step-dot"></div>
+                    <span>就绪</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Connect Form -->
+              <div class="connect-form" id="connect-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">服务器地址</label>
+                    <input type="text" class="form-input mono" id="input-host" placeholder="例如: 192.168.1.100" autocomplete="off">
+                  </div>
+                  <div class="form-group" style="flex: 0 0 100px;">
+                    <label class="form-label">端口</label>
+                    <input type="number" class="form-input mono" id="input-port" value="9527" min="1" max="65535">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">密码 <span style="color: var(--text-muted);">(可选)</span></label>
+                  <input type="password" class="form-input" id="input-password" placeholder="留空则无需认证" autocomplete="off">
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                  <button class="btn btn-primary btn-lg" id="btn-connect" style="flex: 1;">
+                    🔗 连接
+                  </button>
+                  <button class="btn btn-danger btn-lg" id="btn-disconnect" style="flex: 1; display: none;">
+                    ✕ 断开连接
+                  </button>
+                </div>
+              </div>
+
+              <!-- Connection History -->
+              <div>
+                <div class="history-title">📜 连接历史</div>
+                <div class="history-list" id="history-list">
+                  <div class="empty-state" style="padding: 24px;">
+                    <div class="desc">暂无连接历史</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               SYSTEM INFO PAGE
+               ═══════════════════════════════════════════════════════════ -->
+          <div class="page" id="page-system">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <div>
+                <h1 class="page-title">📊 系统信息</h1>
+                <p class="page-subtitle" style="margin-bottom: 0;">远程服务端系统详细信息</p>
+              </div>
+              <button class="btn btn-primary" id="btn-refresh-system">🔄 刷新</button>
+            </div>
+
+            <div id="system-info-content">
+              <div class="empty-state">
+                <div class="icon">📊</div>
+                <div class="title">未获取系统信息</div>
+                <div class="desc">请先连接到远程服务端，然后点击刷新</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               FILES PAGE
+               ═══════════════════════════════════════════════════════════ -->
+          <div class="page" id="page-files">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div>
+                <h1 class="page-title">📁 文件管理</h1>
+                <p class="page-subtitle" style="margin-bottom: 0;">浏览和管理远程文件系统</p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" id="btn-upload-file">⬆️ 上传</button>
+                <button class="btn btn-secondary" id="btn-download-file">⬇️ 下载</button>
+              </div>
+            </div>
+
+            <!-- Breadcrumb -->
+            <div class="files-breadcrumb" id="files-breadcrumb">
+              <span class="breadcrumb-current">C:\Users</span>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="files-toolbar">
+              <input type="text" class="files-search" id="files-search" placeholder="🔍 搜索文件...">
+              <button class="btn btn-secondary btn-sm" id="btn-files-refresh">🔄</button>
+              <button class="btn btn-secondary btn-sm" id="btn-files-up">⬆ 上级</button>
+            </div>
+
+            <!-- File List -->
+            <div class="files-list" id="files-list">
+              <div class="files-list-header">
+                <div></div>
+                <div>名称</div>
+                <div style="text-align: right;">大小</div>
+                <div style="text-align: right;">修改时间</div>
+                <div style="text-align: right;">类型</div>
+              </div>
+              <div id="files-list-body">
+                <div class="empty-state" style="padding: 32px;">
+                  <div class="desc">请先连接到远程服务端</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               PROCESSES PAGE
+               ═══════════════════════════════════════════════════════════ -->
+          <div class="page" id="page-processes">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div>
+                <h1 class="page-title">⚙️ 进程管理</h1>
+                <p class="page-subtitle" style="margin-bottom: 0;">查看和管理远程进程</p>
+              </div>
+              <button class="btn btn-primary" id="btn-refresh-processes">🔄 刷新</button>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="process-toolbar">
+              <input type="text" class="process-search" id="process-search" placeholder="🔍 搜索进程...">
+            </div>
+
+            <!-- Process Table -->
+            <div class="process-table" id="process-table">
+              <div class="process-table-header">
+                <div>PID</div>
+                <div>名称</div>
+                <div style="text-align: right;">CPU%</div>
+                <div style="text-align: right;">内存%</div>
+                <div style="text-align: right;">线程</div>
+                <div>状态</div>
+                <div></div>
+              </div>
+              <div id="process-table-body">
+                <div class="empty-state" style="padding: 32px;">
+                  <div class="desc">请先连接到远程服务端</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               TERMINAL PAGE
+               ═══════════════════════════════════════════════════════════ -->
+          <div class="page" id="page-terminal">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <h1 class="page-title">💻 远程终端</h1>
+                <p class="page-subtitle" style="margin-bottom: 0;">在远程服务端执行命令</p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" id="btn-terminal-clear">🗑️ 清屏</button>
+                <button class="btn btn-secondary btn-sm" id="btn-terminal-shell">🖥️ Shell模式</button>
+              </div>
+            </div>
+
+            <div class="terminal-container">
+              <div class="terminal-header">
+                <div class="terminal-dot red"></div>
+                <div class="terminal-dot yellow"></div>
+                <div class="terminal-dot green"></div>
+                <span class="terminal-title">RC-Client Terminal</span>
+                <div class="terminal-header-spacer"></div>
+                <span id="terminal-conn-status" style="font-size: 11px; color: var(--danger);">● 未连接</span>
+              </div>
+              <div class="terminal-body" id="terminal-body">
+                <div class="terminal-line system">╔═══════════════════════════════════════════════════╗</div>
+                <div class="terminal-line system">║          RC-Client 远程终端 v1.0.0               ║</div>
+                <div class="terminal-line system">╠═══════════════════════════════════════════════════╣</div>
+                <div class="terminal-line system">║  输入 help 查看可用命令                          ║</div>
+                <div class="terminal-line system">║  输入 shell 进入远程终端模式                     ║</div>
+                <div class="terminal-line system">╚═══════════════════════════════════════════════════╝</div>
+                <div class="terminal-line system"></div>
+              </div>
+              <div class="terminal-input-line">
+                <span class="terminal-prompt" id="terminal-prompt">rc&gt;</span>
+                <input type="text" class="terminal-input" id="terminal-input" placeholder="输入命令..." autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               SCREEN PAGE
+               ═══════════════════════════════════════════════════════════ -->
+          <div class="page" id="page-screen">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <h1 class="page-title">🖥️ 屏幕控制</h1>
+                <p class="page-subtitle" style="margin-bottom: 0;">查看和控制远程屏幕</p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" id="btn-screenshot">📸 截图</button>
+                <button class="btn btn-secondary btn-sm" id="btn-fullscreen">⛶ 全屏</button>
+              </div>
+            </div>
+
+            <div class="screen-viewer" id="screen-viewer">
+              <div class="screen-viewer-placeholder">
+                <div class="icon">🖥️</div>
+                <div class="text">未连接到远程服务端</div>
+              </div>
+            </div>
+
+            <div class="screen-controls">
+              <div class="control-group">
+                <span>分辨率:</span>
+                <select id="screen-resolution">
+                  <option value="native">原始</option>
+                  <option value="1920x1080">1920×1080</option>
+                  <option value="1280x720">1280×720</option>
+                  <option value="800x600">800×600</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <span>画质:</span>
+                <select id="screen-quality">
+                  <option value="90">高</option>
+                  <option value="70" selected>中</option>
+                  <option value="50">低</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <span>FPS:</span>
+                <select id="screen-fps">
+                  <option value="30" selected>30</option>
+                  <option value="24">24</option>
+                  <option value="15">15</option>
+                  <option value="10">10</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="shortcut-grid mt-3">
+              <div class="shortcut-item">
+                <span class="shortcut-key">Ctrl+Alt+Del</span>
+                <span class="shortcut-desc">任务管理器</span>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-key">Alt+F4</span>
+                <span class="shortcut-desc">关闭窗口</span>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-key">Win+D</span>
+                <span class="shortcut-desc">显示桌面</span>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-key">Ctrl+C</span>
+                <span class="shortcut-desc">复制</span>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-key">Ctrl+V</span>
+                <span class="shortcut-desc">粘贴</span>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-key">PrtSc</span>
+                <span class="shortcut-desc">截图</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════
+               SETTINGS PAGE
+               ═══════════════════════════════════════════════════════════ -->
+          <div class="page" id="page-settings">
+            <h1 class="page-title">🔧 设置</h1>
+            <p class="page-subtitle">配置客户端默认参数</p>
+
+            <div class="settings-section">
+              <div class="settings-section-title">🌐 连接设置</div>
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">默认服务器地址</div>
+                  <div class="settings-desc">启动时自动填入的服务器地址</div>
+                </div>
+                <div class="settings-control">
+                  <input type="text" class="settings-input" id="setting-host" placeholder="192.168.1.100">
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">默认端口</div>
+                  <div class="settings-desc">服务器连接端口</div>
+                </div>
+                <div class="settings-control">
+                  <input type="number" class="settings-input" id="setting-port" value="9527" min="1" max="65535">
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">默认密码</div>
+                  <div class="settings-desc">连接时自动使用的密码</div>
+                </div>
+                <div class="settings-control">
+                  <input type="password" class="settings-input" id="setting-password" placeholder="留空则无密码">
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">🔄 重连设置</div>
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">自动重连</div>
+                  <div class="settings-desc">连接断开后自动尝试重新连接</div>
+                </div>
+                <div class="settings-control">
+                  <div class="toggle" id="setting-auto-reconnect"></div>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">重连间隔</div>
+                  <div class="settings-desc">两次重连尝试之间的等待时间</div>
+                </div>
+                <div class="settings-control">
+                  <select class="settings-select" id="setting-reconnect-interval">
+                    <option value="3000">3 秒</option>
+                    <option value="5000" selected>5 秒</option>
+                    <option value="10000">10 秒</option>
+                    <option value="30000">30 秒</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">🎨 外观</div>
+              <div class="settings-row">
+                <div class="settings-info">
+                  <div class="settings-label">主题</div>
+                  <div class="settings-desc">界面主题（当前仅支持深色主题）</div>
+                </div>
+                <div class="settings-control">
+                  <select class="settings-select" id="setting-theme">
+                    <option value="dark" selected>深色</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-actions">
+              <button class="btn btn-primary" id="btn-save-settings">💾 保存设置</button>
+              <button class="btn btn-secondary" id="btn-reset-settings">🔄 重置</button>
+            </div>
+          </div>
+
+        </div><!-- /page-content -->
+      </div><!-- /content-panel -->
+    </div><!-- /main-content -->
+
+    <!-- ═══ Status Bar ═══ -->
+    <div class="statusbar">
+      <div class="statusbar-item">
+        <span class="icon" id="status-dot">●</span>
+        <span id="status-connection">未连接</span>
+      </div>
+      <div class="statusbar-item">
+        <span class="icon">⚡</span>
+        <span id="status-latency">— ms</span>
+      </div>
+      <div class="statusbar-item">
+        <span class="icon">↑</span>
+        <span id="status-sent">0 B</span>
+      </div>
+      <div class="statusbar-item">
+        <span class="icon">↓</span>
+        <span id="status-received">0 B</span>
+      </div>
+      <div class="statusbar-spacer"></div>
+      <div class="statusbar-item statusbar-version">RC-Client v1.0.0</div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

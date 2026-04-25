@@ -1,9 +1,9 @@
 /**
  * RC-Server GUI - Electron Main Process
- * 远程控制服务端桌面版
+ * 远程控制服务端桌面版 v1.2.0
  */
 
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog } = require('electron');
 const path = require('path');
 const http = require('http');
 const { WebSocketServer } = require('ws');
@@ -11,10 +11,55 @@ const os = require('os');
 const fs = require('fs');
 
 // ─── 常量 ──────────────────────────────────────────────────────────────────────
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const DEFAULT_PORT = 9527;
 const DEFAULT_HOST = '0.0.0.0';
 const MAX_LOG_ENTRIES = 1000;
+
+// ─── 错误日志（最早初始化）──────────────────────────────────────────────────────
+const logFilePath = path.join(app.getPath('userData'), 'rc-server-error.log');
+function writeErrorLog(msg) {
+  try {
+    const line = `[${new Date().toISOString()}] ${msg}\n`;
+    fs.appendFileSync(logFilePath, line, 'utf-8');
+    console.error(line);
+  } catch (e) { /* ignore */ }
+}
+
+process.on('uncaughtException', (err) => {
+  writeErrorLog(`UNCAUGHT EXCEPTION: ${err.message}\n${err.stack}`);
+  try {
+    dialog.showErrorBox('RC-Server 错误', `程序发生未预期的错误:\n${err.message}\n\n错误日志: ${logFilePath}`);
+  } catch (e) { /* ignore */ }
+});
+
+process.on('unhandledRejection', (reason) => {
+  writeErrorLog(`UNHANDLED REJECTION: ${reason}`);
+});
+
+// ─── 防止多实例（必须在最前面）───────────────────────────────────────────────────
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  console.log('另一个实例已在运行，退出...');
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    writeErrorLog('检测到第二个实例尝试启动');
+    // mainWindow 可能还没创建，所以延迟处理
+    app.once('ready', () => {
+      if (mainWindow) {
+        if (!mainWindow.isVisible()) mainWindow.show();
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+      }
+    });
+    if (mainWindow) {
+      if (!mainWindow.isVisible()) mainWindow.show();
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
 
 // ─── 全局状态 ──────────────────────────────────────────────────────────────────
 let mainWindow = null;
@@ -26,6 +71,8 @@ let serverStartTime = null;
 let serverConfig = { port: DEFAULT_PORT, host: DEFAULT_HOST, password: '', autoStart: false, minimizeToTray: true };
 let clients = new Map();
 let logs = [];
+
+writeErrorLog(`RC-Server v${VERSION} starting...`);
 
 // ─── 日志系统 ──────────────────────────────────────────────────────────────────
 function addLog(level, message) {
@@ -41,7 +88,9 @@ function addLog(level, message) {
   }
   // 通知渲染进程
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('log-added', entry);
+    try {
+      mainWindow.webContents.send('log-added', entry);
+    } catch (e) { /* ignore */ }
   }
   // 同时输出到控制台
   const levelColors = { info: '\x1b[36m', warn: '\x1b[33m', error: '\x1b[31m', success: '\x1b[32m' };
@@ -160,6 +209,47 @@ function broadcastToClients(message, excludeId) {
       try { client.ws.send(data); } catch (e) { /* closed */ }
     }
   }
+}
+
+// ─── 创建应用图标 ──────────────────────────────────────────────────────────────
+function createAppIcon() {
+  // 创建一个 16x16 的绿色圆点图标 (PNG格式)
+  try {
+    // 尝试从文件加载
+    const iconPath = path.join(__dirname, 'build', 'icon.ico');
+    if (fs.existsSync(iconPath)) {
+      return nativeImage.createFromPath(iconPath);
+    }
+  } catch (e) { /* ignore */ }
+
+  try {
+    // 创建一个 16x16 的 PNG 图标 (绿色圆点)
+    const width = 16;
+    const height = 16;
+    // 手动构建一个简单的 BMP/PNG 图标
+    // 使用 1x1 绿色像素的 data URL 方式
+    const img = nativeImage.createFromDataURL(
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA1ElEQVQ4T2NkoBAwUqifgWoGzP//n+E/AwMDIwMDgyMDA4MLgqv//o8J8B8DAwMDk4MhkQUQGSD2+e9AWIA8QM4A4gcg5gGiR0DmBaJnGRkZ/xkYGJwZGBjcGBgYnAkA8QOQMAOqC8ScgYGR8R8DAwMjAwODM4MLBVXoE5DaA+ImIGsB8T8DA4NzAyODA8WcAqoLxJyBgZERkEMB8QMQO4PiDiB2BqI3gCJRVYF4FFgfAwcHY6ILxJ+BQVcF4s9AwciIgsEBqgLxJ6BgVESCKYF4s/AwKgkIjNAFYo/AwOjMoMzgyuDK4MrA8WfAoMFihkZGf8ZGBicGRgY3BkYGBQEAPs5MkN3K2snAAAAAElFTkSuQmCC'
+    );
+    if (!img.isEmpty()) {
+      return img;
+    }
+  } catch (e) { /* ignore */ }
+
+  // 最后的 fallback: 创建一个 1x1 像素的图标
+  try {
+    const buf = Buffer.from([
+      0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+      0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+      0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE, 0x00, 0x00, 0x00,
+      0x0C, 0x49, 0x44, 0x41, 0x54, 0x08, 0xD7, 0x63, 0x60, 0xF8, 0xCF, 0xC0,
+      0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC, 0x33, 0x00, 0x00,
+      0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
+    ]);
+    return nativeImage.createFromBuffer(buf);
+  } catch (e) { /* ignore */ }
+
+  return null;
 }
 
 // ─── WebSocket 消息处理 ────────────────────────────────────────────────────────
@@ -316,12 +406,14 @@ function startServer() {
 
         // 通知渲染进程
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('client-connected', {
-            id,
-            ip: clientIp,
-            connectedAt: clientInfo.connectedAt,
-            authenticated: false,
-          });
+          try {
+            mainWindow.webContents.send('client-connected', {
+              id,
+              ip: clientIp,
+              connectedAt: clientInfo.connectedAt,
+              authenticated: false,
+            });
+          } catch (e) { /* ignore */ }
         }
 
         ws.on('message', (data) => {
@@ -337,7 +429,9 @@ function startServer() {
           clients.delete(id);
           addLog('info', `客户端断开: ${id.substring(0, 8)} [当前在线: ${clients.size}]`);
           if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('client-disconnected', { id });
+            try {
+              mainWindow.webContents.send('client-disconnected', { id });
+            } catch (e) { /* ignore */ }
           }
         });
 
@@ -345,7 +439,9 @@ function startServer() {
           addLog('error', `客户端错误 (${id.substring(0, 8)}): ${err.message}`);
           clients.delete(id);
           if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('client-disconnected', { id });
+            try {
+              mainWindow.webContents.send('client-disconnected', { id });
+            } catch (e) { /* ignore */ }
           }
         });
       });
@@ -365,13 +461,9 @@ function startServer() {
         isServerRunning = true;
         serverStartTime = Date.now();
 
-        addLog('success', '╔═══════════════════════════════════════════════════╗');
-        addLog('success', `║       RC-Server v${VERSION}  远程控制服务端          ║`);
-        addLog('success', '╠═══════════════════════════════════════════════════╣');
-        addLog('success', `║  监听地址: ${host}:${port}                              ║`);
-        addLog('success', `║  密码保护: ${password ? '已启用' : '未启用'}                              ║`);
-        addLog('success', '╚═══════════════════════════════════════════════════╝');
-        addLog('success', '服务已启动，等待客户端连接...');
+        addLog('success', `RC-Server v${VERSION} 已启动 - ${host}:${port}`);
+        addLog('success', `密码保护: ${password ? '已启用' : '未启用'}`);
+        addLog('success', '等待客户端连接...');
 
         resolve({ success: true, message: `服务器已启动: ${host}:${port}` });
       });
@@ -548,7 +640,7 @@ function setupIPC() {
 
   ipcMain.handle('minimize-window', () => {
     if (mainWindow) {
-      if (serverConfig.minimizeToTray) {
+      if (serverConfig.minimizeToTray && tray) {
         mainWindow.hide();
       } else {
         mainWindow.minimize();
@@ -558,7 +650,7 @@ function setupIPC() {
   });
 
   ipcMain.handle('close-window', () => {
-    if (mainWindow && serverConfig.minimizeToTray && isServerRunning) {
+    if (mainWindow && serverConfig.minimizeToTray && isServerRunning && tray) {
       mainWindow.hide();
     } else {
       app.quit();
@@ -569,111 +661,117 @@ function setupIPC() {
 
 // ─── 窗口创建 ──────────────────────────────────────────────────────────────────
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
-    minWidth: 800,
-    minHeight: 550,
-    frame: false,
-    resizable: true,
-    backgroundColor: '#0f172a',
-    titleBarStyle: 'hidden',
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
+  try {
+    mainWindow = new BrowserWindow({
+      width: 1000,
+      height: 700,
+      minWidth: 800,
+      minHeight: 550,
+      frame: false,
+      resizable: true,
+      backgroundColor: '#0f172a',
+      show: false,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
 
-  mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+    mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
-  // 开发时打开 DevTools
-  // mainWindow.webContents.openDevTools();
+    // 窗口准备好后再显示（避免闪烁）
+    mainWindow.once('ready-to-show', () => {
+      mainWindow.show();
+      writeErrorLog('主窗口已显示');
+    });
 
-  mainWindow.on('close', (e) => {
-    if (serverConfig.minimizeToTray && isServerRunning) {
-      e.preventDefault();
-      mainWindow.hide();
-    }
-  });
+    mainWindow.on('close', (e) => {
+      if (serverConfig.minimizeToTray && isServerRunning && tray) {
+        e.preventDefault();
+        mainWindow.hide();
+      }
+    });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+    mainWindow.on('closed', () => {
+      mainWindow = null;
+    });
+
+    // 开发时打开 DevTools（调试用，发布时注释掉）
+    // mainWindow.webContents.openDevTools();
+
+    writeErrorLog('主窗口创建成功');
+  } catch (err) {
+    writeErrorLog(`创建窗口失败: ${err.message}\n${err.stack}`);
+    dialog.showErrorBox('RC-Server 错误', `创建窗口失败:\n${err.message}`);
+  }
 }
 
 function createTray() {
-  // 创建一个简单的图标 (16x16 emerald dot)
-  const icon = nativeImage.createEmpty();
-  // 使用默认图标
-  try {
-    const iconPath = path.join(__dirname, 'build', 'icon.ico');
-    if (fs.existsSync(iconPath)) {
-      tray = new Tray(iconPath);
-    } else {
-      // 创建一个简单的 16x16 图标
-      const size = 16;
-      const img = nativeImage.createFromBuffer(
-        Buffer.from([
-          0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG header
-          // This won't work well, let's just skip tray for now if no icon
-        ])
-      );
-      tray = new Tray(nativeImage.createEmpty());
-    }
-  } catch (e) {
-    // Tray creation failed, that's ok
+  const icon = createAppIcon();
+  if (!icon || icon.isEmpty()) {
+    writeErrorLog('无法创建托盘图标（没有有效图标），跳过托盘创建');
     return;
   }
 
-  const contextMenu = Menu.buildFromTemplate([
-    { label: 'RC-Server 远程控制服务端', enabled: false },
-    { type: 'separator' },
-    {
-      label: isServerRunning ? '服务运行中 ●' : '服务已停止 ○',
-      enabled: false,
-    },
-    { type: 'separator' },
-    {
-      label: '显示主窗口',
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-        }
-      },
-    },
-    {
-      label: isServerRunning ? '停止服务' : '启动服务',
-      click: async () => {
-        if (isServerRunning) {
-          await stopServer();
-        } else {
-          await startServer();
-        }
-      },
-    },
-    { type: 'separator' },
-    {
-      label: '退出',
-      click: () => {
-        stopServer().then(() => app.quit());
-      },
-    },
-  ]);
+  try {
+    tray = new Tray(icon);
 
-  tray.setToolTip('RC-Server 远程控制服务端');
-  tray.setContextMenu(contextMenu);
-  tray.on('double-click', () => {
-    if (mainWindow) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  });
+    const contextMenu = Menu.buildFromTemplate([
+      { label: `RC-Server v${VERSION}`, enabled: false },
+      { type: 'separator' },
+      {
+        label: isServerRunning ? '服务运行中 ●' : '服务已停止 ○',
+        enabled: false,
+      },
+      { type: 'separator' },
+      {
+        label: '显示主窗口',
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+        },
+      },
+      {
+        label: isServerRunning ? '停止服务' : '启动服务',
+        click: async () => {
+          if (isServerRunning) {
+            await stopServer();
+          } else {
+            await startServer();
+          }
+        },
+      },
+      { type: 'separator' },
+      {
+        label: '退出',
+        click: () => {
+          stopServer().then(() => app.quit());
+        },
+      },
+    ]);
+
+    tray.setToolTip(`RC-Server v${VERSION} 远程控制服务端`);
+    tray.setContextMenu(contextMenu);
+    tray.on('double-click', () => {
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+
+    writeErrorLog('系统托盘创建成功');
+  } catch (err) {
+    writeErrorLog(`创建托盘失败: ${err.message}`);
+    tray = null;
+  }
 }
 
 // ─── 应用生命周期 ──────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
+  writeErrorLog('App ready, initializing...');
   loadConfig();
   setupIPC();
   createWindow();
@@ -695,6 +793,9 @@ app.whenReady().then(() => {
       mainWindow.show();
     }
   });
+}).catch((err) => {
+  writeErrorLog(`app.whenReady failed: ${err.message}`);
+  dialog.showErrorBox('RC-Server 错误', `应用初始化失败:\n${err.message}`);
 });
 
 app.on('window-all-closed', () => {
@@ -706,17 +807,3 @@ app.on('window-all-closed', () => {
 app.on('before-quit', async () => {
   await stopServer();
 });
-
-// 防止多实例
-const gotTheLock = app.requestSingleInstanceLock();
-if (!gotTheLock) {
-  app.quit();
-} else {
-  app.on('second-instance', () => {
-    if (mainWindow) {
-      if (!mainWindow.isVisible()) mainWindow.show();
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-    }
-  });
-}

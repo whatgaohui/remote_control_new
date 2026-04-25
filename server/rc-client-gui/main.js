@@ -1,15 +1,54 @@
 /**
  * RC-Client GUI - Electron Main Process
- * Manages BrowserWindow, WebSocket client, and IPC communication
+ * Manages BrowserWindow, WebSocket client, and IPC communication v1.2.0
  */
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const WebSocket = require('ws');
 const fs = require('fs');
 const os = require('os');
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
+
+// ─── 错误日志（最早初始化）──────────────────────────────────────────────────────
+const logFilePath = path.join(app.getPath('userData'), 'rc-client-error.log');
+function writeErrorLog(msg) {
+  try {
+    const line = `[${new Date().toISOString()}] ${msg}\n`;
+    fs.appendFileSync(logFilePath, line, 'utf-8');
+    console.error(line);
+  } catch (e) { /* ignore */ }
+}
+
+process.on('uncaughtException', (err) => {
+  writeErrorLog(`UNCAUGHT EXCEPTION: ${err.message}\n${err.stack}`);
+  try {
+    dialog.showErrorBox('RC-Client 错误', `程序发生未预期的错误:\n${err.message}\n\n错误日志: ${logFilePath}`);
+  } catch (e) { /* ignore */ }
+});
+
+process.on('unhandledRejection', (reason) => {
+  writeErrorLog(`UNHANDLED REJECTION: ${reason}`);
+});
+
+writeErrorLog(`RC-Client v${VERSION} starting...`);
+
+// ─── 防止多实例（必须在最前面）───────────────────────────────────────────────────
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  console.log('另一个实例已在运行，退出...');
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    writeErrorLog('检测到第二个实例尝试启动');
+    if (mainWindow) {
+      if (!mainWindow.isVisible()) mainWindow.show();
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
 
 // ─── Global State ────────────────────────────────────────────────────────────
 let mainWindow = null;
@@ -93,40 +132,46 @@ function saveConfigToFile(config) {
 
 // ─── Window Creation ─────────────────────────────────────────────────────────
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1100,
-    height: 750,
-    minWidth: 900,
-    minHeight: 600,
-    frame: false,
-    backgroundColor: '#0f172a',
-    titleBarStyle: 'hidden',
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false
-    },
-    icon: path.join(__dirname, 'build', 'icon.ico'),
-    show: false
-  });
+  try {
+    mainWindow = new BrowserWindow({
+      width: 1100,
+      height: 750,
+      minWidth: 900,
+      minHeight: 600,
+      frame: false,
+      backgroundColor: '#0f172a',
+      show: false,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false
+      },
+    });
 
-  mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+    mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
+    mainWindow.once('ready-to-show', () => {
+      mainWindow.show();
+      writeErrorLog('主窗口已显示');
+    });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-    if (ws) {
-      ws.close();
-      ws = null;
-    }
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    }
-  });
+    mainWindow.on('closed', () => {
+      mainWindow = null;
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+    });
+
+    writeErrorLog('主窗口创建成功');
+  } catch (err) {
+    writeErrorLog(`创建窗口失败: ${err.message}\n${err.stack}`);
+    dialog.showErrorBox('RC-Client 错误', `创建窗口失败:\n${err.message}`);
+  }
 }
 
 // ─── WebSocket Client ────────────────────────────────────────────────────────
@@ -172,6 +217,7 @@ function connectToServer(config) {
       host: connectionConfig.host,
       port: connectionConfig.port
     });
+    writeErrorLog(`已连接到 ${connectionConfig.host}:${connectionConfig.port}`);
   });
 
   ws.on('message', (data) => {
@@ -193,6 +239,7 @@ function connectToServer(config) {
       code,
       reason: reason.toString()
     });
+    writeErrorLog(`连接断开 (code: ${code})`);
 
     // Auto-reconnect
     if (autoReconnect && !reconnectTimer) {
@@ -208,6 +255,7 @@ function connectToServer(config) {
   ws.on('error', (err) => {
     isConnecting = false;
     sendToRenderer('connection-error', { message: err.message });
+    writeErrorLog(`连接错误: ${err.message}`);
   });
 
   return { success: true };
@@ -285,7 +333,9 @@ function handleServerMessage(data) {
 
 function sendToRenderer(channel, data) {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send(channel, data);
+    try {
+      mainWindow.webContents.send(channel, data);
+    } catch (e) { /* ignore */ }
   }
 }
 
@@ -332,7 +382,6 @@ ipcMain.handle('send-command', (event, { type, data }) => {
 
   switch (type) {
     case 'get_system_info':
-      // no extra data needed
       break;
     case 'get_processes':
       break;
@@ -364,7 +413,6 @@ ipcMain.handle('send-command', (event, { type, data }) => {
       msg.password = data?.password || '';
       break;
     default:
-      // Pass through as-is
       if (data) Object.assign(msg, data);
   }
 
@@ -433,13 +481,19 @@ setInterval(() => {
 
 // ─── App Lifecycle ───────────────────────────────────────────────────────────
 app.whenReady().then(() => {
+  writeErrorLog('App ready, initializing...');
   createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+    } else if (mainWindow) {
+      mainWindow.show();
     }
   });
+}).catch((err) => {
+  writeErrorLog(`app.whenReady failed: ${err.message}`);
+  dialog.showErrorBox('RC-Client 错误', `应用初始化失败:\n${err.message}`);
 });
 
 app.on('window-all-closed', () => {

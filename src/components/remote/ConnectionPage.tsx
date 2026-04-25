@@ -490,7 +490,7 @@ export default function ConnectionPage() {
                 <Download className="h-5 w-5 text-cyan-400" />
                 下载桌面客户端
                 <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px]">GUI 图形界面</Badge>
-                <Badge variant="outline" className="border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-[10px]">v1.1.0 最新版</Badge>
+                <Badge variant="outline" className="border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-[10px]">v1.2.0 最新版</Badge>
               </CardTitle>
               <CardDescription className="text-slate-400">
                 下载带界面的桌面版程序，无需命令行操作
@@ -505,7 +505,7 @@ export default function ConnectionPage() {
                       <Server className="h-5 w-5 text-emerald-400" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-white">RC-Server 服务端 <span className="text-emerald-400 text-[11px] font-normal">v1.1.0</span></h3>
+                      <h3 className="text-sm font-semibold text-white">RC-Server 服务端 <span className="text-emerald-400 text-[11px] font-normal">v1.2.0</span></h3>
                       <p className="text-xs text-slate-500">带界面的 Windows 桌面版 · ~94MB</p>
                     </div>
                   </div>
@@ -531,9 +531,9 @@ export default function ConnectionPage() {
                     size="sm"
                     className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500"
                   >
-                    <a href="/downloads/RC-Server-GUI-v1.1.0.zip" download>
+                    <a href="/downloads/RC-Server-GUI-v1.2.0.zip" download>
                       <Download className="mr-1.5 h-4 w-4" />
-                      下载 RC-Server v1.1.0
+                      下载 RC-Server v1.2.0
                     </a>
                   </Button>
                 </div>
@@ -545,7 +545,7 @@ export default function ConnectionPage() {
                       <MonitorSmartphone className="h-5 w-5 text-cyan-400" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-white">RC-Client 客户端 <span className="text-cyan-400 text-[11px] font-normal">v1.1.0</span></h3>
+                      <h3 className="text-sm font-semibold text-white">RC-Client 客户端 <span className="text-cyan-400 text-[11px] font-normal">v1.2.0</span></h3>
                       <p className="text-xs text-slate-500">带界面的 Windows 桌面版 · ~94MB</p>
                     </div>
                   </div>
@@ -571,9 +571,9 @@ export default function ConnectionPage() {
                     size="sm"
                     className="w-full bg-gradient-to-r from-cyan-600 to-sky-600 text-white shadow-lg shadow-cyan-600/20 hover:from-cyan-500 hover:to-sky-500"
                   >
-                    <a href="/downloads/RC-Client-GUI-v1.1.0.zip" download>
+                    <a href="/downloads/RC-Client-GUI-v1.2.0.zip" download>
                       <Download className="mr-1.5 h-4 w-4" />
-                      下载 RC-Client v1.1.0
+                      下载 RC-Client v1.2.0
                     </a>
                   </Button>
                 </div>
@@ -585,9 +585,9 @@ export default function ConnectionPage() {
                   <MonitorSmartphone className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                   <div className="text-xs text-slate-400 leading-relaxed">
                     <p className="mb-1 font-medium text-slate-300">快速开始：</p>
-                    <p>1. 下载并解压 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">RC-Server-GUI-v1.1.0.zip</code>，双击运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">RC-Server.exe</code></p>
+                    <p>1. 下载并解压 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">RC-Server-GUI-v1.2.0.zip</code>，双击运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">RC-Server.exe</code></p>
                     <p>2. 在服务端界面点击 <code className="rounded bg-slate-800 px-1 py-0.5 text-emerald-400">启动服务</code> 按钮，默认监听 9527 端口</p>
-                    <p>3. 下载并解压 <code className="rounded bg-slate-800 px-1 py-0.5 text-cyan-400">RC-Client-GUI-v1.1.0.zip</code>，双击运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-cyan-400">RC-Client.exe</code></p>
+                    <p>3. 下载并解压 <code className="rounded bg-slate-800 px-1 py-0.5 text-cyan-400">RC-Client-GUI-v1.2.0.zip</code>，双击运行 <code className="rounded bg-slate-800 px-1 py-0.5 text-cyan-400">RC-Client.exe</code></p>
                     <p>4. 在客户端输入服务端 IP 地址，点击连接即可开始远程控制</p>
                   </div>
                 </div>

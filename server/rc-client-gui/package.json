@@ -1,6 +1,6 @@
 {
   "name": "rc-client-gui",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "RC-Client 远程控制客户端 - 桌面版",
   "author": "RC-Team",
   "main": "main.js",
